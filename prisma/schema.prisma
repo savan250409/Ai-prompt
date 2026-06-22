@@ -1,0 +1,346 @@
+// Prisma schema — §4.
+//
+// EXISTING content tables (ngendev_*, filter_*) are mapped EXACTLY and must
+// NEVER be migrated/altered by this app (§1). Treat them as read-only; keep
+// them in sync with `prisma db pull`. NEW web tables live below and are owned
+// by this app's migrations.
+//
+// Until DATABASE_URL is set the app runs entirely on the local mock catalog,
+// so this schema only needs to *generate* (no DB connection required).
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ============================================================================
+// EXISTING TABLES — map exactly, do NOT rename, do NOT migrate (§4.1)
+// Relations to these are resolved by querying category_id (no FK assumptions).
+// ============================================================================
+
+enum ngendev_categories_type {
+  Solo
+  Couple
+}
+
+enum ngendev_video_categories_type {
+  Solo
+  Couple
+}
+
+model ngendev_categories {
+  id             BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  category_name  String                  @db.VarChar(255)
+  category_image String?                 @db.VarChar(255)
+  type           ngendev_categories_type @default(Solo)
+  sort_order     Int                     @default(0)
+  status         Int                     @default(0) @db.TinyInt
+  created_at     DateTime?               @db.Timestamp(0)
+  updated_at     DateTime?               @db.Timestamp(0)
+
+  @@map("ngendev_categories")
+}
+
+model ngendev_images {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  category_id BigInt    @db.UnsignedBigInt
+  image_path  String    @db.VarChar(255)
+  ai_prompt   String    @db.Text // GATED — never sent to client while locked
+  ai_model    String?   @db.VarChar(255)
+  sort_order  Int       @default(0)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+  no_of_image Int       @default(1)
+  name_change Int       @default(0) @db.TinyInt
+  image_hint  String?   @db.VarChar(255)
+
+  @@index([category_id])
+  @@map("ngendev_images")
+}
+
+model ngendev_video_categories {
+  id             BigInt                        @id @default(autoincrement()) @db.UnsignedBigInt
+  category_name  String                        @db.VarChar(255)
+  category_image String?                       @db.VarChar(255)
+  type           ngendev_video_categories_type @default(Solo)
+  sort_order     Int                           @default(0)
+  status         Int                           @default(1) @db.TinyInt
+  created_at     DateTime?                     @db.Timestamp(0)
+  updated_at     DateTime?                     @db.Timestamp(0)
+
+  @@map("ngendev_video_categories")
+}
+
+model ngendev_videos {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  category_id     BigInt    @db.UnsignedBigInt
+  video_thumbnail String?   @db.VarChar(255)
+  video_path      String    @db.VarChar(255)
+  ai_prompt       String    @db.Text // GATED
+  ai_model        String?   @db.VarChar(255)
+  sort_order      Int       @default(0)
+  no_of_video     Int       @default(1)
+  name_change     Int       @default(0) @db.TinyInt
+  image_hint      String?   @db.VarChar(255)
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+
+  @@index([category_id])
+  @@map("ngendev_videos")
+}
+
+model filter_ai_image_categories {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  category_name  String    @db.VarChar(255)
+  category_image String?   @db.VarChar(255)
+  sort_order     Int       @default(0)
+  status         Int       @default(1) @db.TinyInt
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@map("filter_ai_image_categories")
+}
+
+model filter_ai_images {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  category_id BigInt    @db.UnsignedBigInt
+  name        String?   @db.VarChar(255)
+  ai_prompt   String    @db.Text // style prompt — gated for output use
+  image_path  String?   @db.VarChar(255)
+  sort_order  Int       @default(0)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+
+  @@index([category_id])
+  @@map("filter_ai_images")
+}
+
+// ============================================================================
+// NEW WEB TABLES — owned by this app (§4.2). Includes Auth.js adapter tables.
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String? // exposed as `avatar` in DTOs
+  phone         String?
+  passwordHash  String?   @map("password_hash")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  accounts         Account[]
+  sessions         Session[]
+  subscriptions    Subscription[]
+  coinTransactions CoinTransaction[]
+  promptUnlocks    PromptUnlock[]
+  favorites        Favorite[]
+  generations      Generation[]
+
+  @@map("users")
+}
+
+// --- Auth.js adapter models -------------------------------------------------
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// --- domain ----------------------------------------------------------------
+enum SubscriptionPlan {
+  weekly
+  monthly
+  yearly
+}
+
+enum SubscriptionStatus {
+  active
+  cancelled
+  expired
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String             @map("user_id")
+  plan                   SubscriptionPlan
+  status                 SubscriptionStatus @default(active)
+  provider               String             @default("cashfree")
+  providerSubscriptionId String?            @map("provider_subscription_id")
+  currentPeriodStart     DateTime           @map("current_period_start")
+  currentPeriodEnd       DateTime           @map("current_period_end")
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+enum CoinReason {
+  subscription_grant
+  generation_video
+  generation_image
+  filter
+  tool
+  refund
+  admin
+}
+
+// Ledger = source of truth for balance (§4.2). Balance = SUM(delta).
+model CoinTransaction {
+  id            String     @id @default(cuid())
+  userId        String     @map("user_id")
+  delta         Int
+  reason        CoinReason
+  referenceType String?    @map("reference_type")
+  referenceId   String?    @map("reference_id")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("coin_transactions")
+}
+
+enum UnlockItemType {
+  video
+  image
+}
+
+enum UnlockMethod {
+  ad
+  pro
+}
+
+model PromptUnlock {
+  id        String         @id @default(cuid())
+  userId    String         @map("user_id")
+  itemType  UnlockItemType @map("item_type")
+  itemId    String         @map("item_id")
+  method    UnlockMethod
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemType, itemId])
+  @@index([userId])
+  @@map("prompt_unlocks")
+}
+
+enum FavoriteItemType {
+  video
+  image
+  filter
+}
+
+model Favorite {
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
+  itemType  FavoriteItemType @map("item_type")
+  itemId    String           @map("item_id")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemType, itemId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+enum GenerationKind {
+  video
+  image
+  filter
+  tool
+}
+
+enum GenerationStatus {
+  queued
+  processing
+  done
+  failed
+}
+
+model Generation {
+  id              String           @id @default(cuid())
+  userId          String           @map("user_id")
+  kind            GenerationKind
+  sourceItemType  String?          @map("source_item_type")
+  sourceItemId    String?          @map("source_item_id")
+  toolKey         String?          @map("tool_key")
+  params          Json?
+  inputMediaPath  String?          @map("input_media_path") @db.Text
+  outputMediaPath String?          @map("output_media_path") @db.Text
+  providerTaskId  String?          @map("provider_task_id") // Runware taskUUID (§7a)
+  status          GenerationStatus @default(queued)
+  coinsSpent      Int              @default(0) @map("coins_spent")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("generations")
+}
+
+// Fixed list of six tools, seeded by the app (§4.2).
+model AiTool {
+  id          String   @id @default(cuid())
+  toolKey     String   @unique @map("tool_key")
+  name        String
+  description String   @db.Text
+  beforeImage String?  @map("before_image")
+  afterImage  String?  @map("after_image")
+  coinCost    Int      @default(3) @map("coin_cost")
+  requiresPro Int      @default(0) @map("requires_pro") @db.TinyInt
+  sortOrder   Int      @default(0) @map("sort_order")
+  status      Int      @default(1) @db.TinyInt
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("ai_tools")
+}

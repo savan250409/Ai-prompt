@@ -1,0 +1,284 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   DESIGN TOKENS — §11.2  (never hardcode hex in components; use these vars)
+   Theme is switched by next-themes via the data-theme attribute on <html>.
+   Dark is the default (also bound to :root so SSR/first paint is dark).
+============================================================================ */
+:root,
+[data-theme="dark"] {
+  --ink: #0a0e14;
+  --slate: #141a24;
+  --slate-2: #1c2430;
+  --hairline: #2a3340;
+  --text-hi: #f5f7fa;
+  --text-mid: #aab4c4;
+  --text-low: #6b7588;
+  --cyan: #22d3ee;
+  --blue: #3b82f6;
+  --gold: #e8b765;
+  --gold-deep: #b8893b;
+  --danger: #f25555;
+  --glass: rgba(20, 26, 36, 0.72);
+  --scrim: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
+
+  --grad-electric: linear-gradient(120deg, var(--cyan), var(--blue));
+  --grad-gold: linear-gradient(120deg, #f4d08a, var(--gold-deep));
+  --glow-electric: 0 0 0 1px rgba(34, 211, 238, 0.25), 0 8px 40px rgba(59, 130, 246, 0.35);
+  --glow-gold: 0 0 0 1px rgba(232, 183, 101, 0.3), 0 8px 40px rgba(184, 137, 59, 0.32);
+
+  /* media mosaic vignette (dark only) */
+  --vignette: radial-gradient(120% 80% at 50% -10%, rgba(59, 130, 246, 0.12), transparent 60%);
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --ink: #f4f6f9;
+  --slate: #ffffff;
+  --slate-2: #eef1f6;
+  --hairline: #dce2eb;
+  --text-hi: #0f1620;
+  --text-mid: #46505f;
+  --text-low: #6b7588;
+  --cyan: #0bb4d4;
+  --blue: #2563eb;
+  --gold: #b07e26;
+  --gold-deep: #8c6219;
+  --danger: #dc2626;
+  --glass: rgba(255, 255, 255, 0.72);
+  --scrim: linear-gradient(to top, rgba(0, 0, 0, 0.78), transparent);
+
+  --grad-electric: linear-gradient(120deg, var(--cyan), var(--blue));
+  --grad-gold: linear-gradient(120deg, #d8a94e, var(--gold-deep));
+  /* soften glows in light — §11.2 */
+  --glow-electric: 0 0 0 1px rgba(11, 180, 212, 0.2), 0 10px 30px rgba(37, 99, 235, 0.16);
+  --glow-gold: 0 0 0 1px rgba(176, 126, 38, 0.22), 0 10px 30px rgba(140, 98, 25, 0.16);
+  --vignette: radial-gradient(120% 80% at 50% -10%, rgba(37, 99, 235, 0.06), transparent 60%);
+
+  color-scheme: light;
+}
+
+/* Motion tokens — §11.6 + constant on-gradient text (same in both themes) */
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 160ms;
+  --dur-base: 280ms;
+  --dur-slow: 460ms;
+  --on-electric: #ffffff;
+  --gold-ink: #2a1d07;
+}
+
+/* ============================================================================
+   BASE
+============================================================================ */
+@layer base {
+  * {
+    border-color: var(--hairline);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    .animate-marquee-up,
+    .animate-marquee-down {
+      animation: none !important;
+    }
+  }
+
+  body {
+    background-color: var(--ink);
+    background-image: var(--vignette);
+    background-attachment: fixed;
+    color: var(--text-hi);
+    font-feature-settings: "ss01", "cv01";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgba(34, 211, 238, 0.28);
+    color: var(--text-hi);
+  }
+
+  /* Visible electric focus ring — §11.8 */
+  :focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  /* thin themed scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--hairline) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--hairline);
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* hide scrollbar utility for snap rails */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ============================================================================
+   COMPONENT UTILITIES
+============================================================================ */
+@layer components {
+  /* frosted floating surfaces — bars, modals, sheets — §11.4 */
+  .glass {
+    background: var(--glass);
+    -webkit-backdrop-filter: saturate(140%) blur(18px);
+    backdrop-filter: saturate(140%) blur(18px);
+    border: 1px solid color-mix(in srgb, var(--hairline) 80%, transparent);
+  }
+
+  /* gradient text */
+  .text-gradient-electric {
+    background: var(--grad-electric);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .text-gradient-gold {
+    background: var(--grad-gold);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* thin gold border for Pro/Exclusive cards — §11.7 */
+  .ring-gold {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 55%, transparent);
+  }
+
+  /* dark scrim over media labels (both themes) — §11.2 */
+  .media-scrim::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--scrim);
+    pointer-events: none;
+  }
+
+  /* shimmer skeleton — §11.6 "Loading.." */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--slate-2);
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--text-hi) 8%, transparent),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
+
+  /* hairline divider */
+  .hr {
+    height: 1px;
+    background: var(--hairline);
+    border: 0;
+  }
+
+  /* active nav fill — faint electric tint (§11.6) */
+  .nav-active {
+    background: linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--cyan) 16%, transparent),
+      color-mix(in srgb, var(--blue) 16%, transparent)
+    );
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cyan) 30%, transparent);
+  }
+}
+
+/* Lenis smooth scroll */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ============================================================================
+   VIEW TRANSITIONS — shared-element morph (card -> detail) §11.6
+============================================================================ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 320ms;
+  animation-timing-function: var(--ease-out);
+}
+
+/* ============================================================================
+   REDUCED MOTION — every signature has a fallback — §11.8
+============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  /* mono numerics — coins, durations, resolutions */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
