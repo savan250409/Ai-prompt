@@ -1,0 +1,46 @@
+
+> aiprompt@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.26:3000
+- Environments: .env.local
+✓ Ready in 4.6s
+- Experiments (use with caution):
+  · optimizePackageImports
+
+○ Compiling / ...
+ GET / 200 in 16.7s (next.js: 14.7s, application-code: 2.1s)
+ GET /videos 200 in 2.7s (next.js: 2.3s, application-code: 429ms)
+ GET /videos/vc1 200 in 5.5s (next.js: 5.0s, application-code: 540ms)
+○ Compiling /videos/prompt/[id] ...
+ GET /videos/prompt/v_vc1_1 200 in 7.7s (next.js: 6.5s, application-code: 1181ms)
+ GET /api/video-categories 200 in 2.4s (next.js: 2.4s, application-code: 46ms)
+ GET /api/placeholder/test/100/100 200 in 2.2s (next.js: 2.2s, application-code: 26ms)
+ GET /api/me 200 in 1967ms (next.js: 1934ms, application-code: 33ms)
+ GET /api/video-categories 200 in 24ms (next.js: 7ms, application-code: 16ms)
+ GET /api/me 200 in 41ms (next.js: 11ms, application-code: 30ms)
+ GET /api/placeholder/test-seed/400/300 200 in 41ms (next.js: 24ms, application-code: 18ms)
+○ Compiling /images/prompt/[id] ...
+ GET /api/placeholder/image-0-1/800/800 200 in 214ms (next.js: 191ms, application-code: 23ms)
+ GET /images/prompt/i_ic1_2 200 in 10.1s (next.js: 8.9s, application-code: 1205ms)
+ GET /api/placeholder/image-0-0/800/1212 200 in 508ms (next.js: 343ms, application-code: 165ms)
+ GET /api/placeholder/image-0-2/800/1000 200 in 113ms (next.js: 93ms, application-code: 20ms)
+ GET /api/placeholder/image-0-3/800/1067 200 in 243ms (next.js: 90ms, application-code: 152ms)
+ GET /api/placeholder/image-0-4/800/1143 200 in 97ms (next.js: 23ms, application-code: 74ms)
+ GET /api/placeholder/image-0-5/800/1212 200 in 121ms (next.js: 29ms, application-code: 92ms)
+ GET /api/placeholder/image-0-6/800/800 200 in 196ms (next.js: 140ms, application-code: 56ms)
+ GET /api/me 200 in 325ms (next.js: 102ms, application-code: 224ms)
+ GET /api/placeholder/image-0-7/800/1000 200 in 96ms (next.js: 52ms, application-code: 43ms)
+ GET /images/prompt/i_ic1_2 200 in 1059ms (next.js: 26ms, application-code: 1033ms)
+ GET /api/placeholder/image-0-1/800/800 200 in 465ms (next.js: 366ms, application-code: 99ms)
+ GET /api/placeholder/image-0-4/800/1143 200 in 221ms (next.js: 94ms, application-code: 127ms)
+ GET /api/placeholder/image-0-3/800/1067 200 in 92ms (next.js: 59ms, application-code: 33ms)
+ GET /api/placeholder/image-0-0/800/1212 200 in 87ms (next.js: 59ms, application-code: 28ms)
+ GET /api/placeholder/image-0-5/800/1212 200 in 345ms (next.js: 204ms, application-code: 141ms)
+ GET /api/placeholder/image-0-7/800/1000 200 in 404ms (next.js: 346ms, application-code: 58ms)
+ GET /api/placeholder/image-0-2/800/1000 200 in 213ms (next.js: 124ms, application-code: 90ms)
+ GET /api/placeholder/image-0-6/800/800 200 in 396ms (next.js: 272ms, application-code: 124ms)
+ GET /api/me 200 in 79ms (next.js: 51ms, application-code: 28ms)
+[?25h

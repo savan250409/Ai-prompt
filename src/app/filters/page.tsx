@@ -16,9 +16,9 @@ export const metadata: Metadata = {
 export default async function FiltersPage({
   searchParams,
 }: {
-  searchParams: { category?: string };
+  searchParams: Promise<{ category?: string }>;
 }) {
-  const selected = searchParams.category;
+  const { category: selected } = await searchParams;
   const [cats, filters] = await Promise.all([
     catalog.filterCategories(),
     catalog.filters(selected),

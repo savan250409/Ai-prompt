@@ -36,9 +36,9 @@ async function main() {
         status: 1,
       },
       create: {
-          toolKey: t.toolKey,
-          name: t.name,
-          description: t.description,
+        toolKey: t.toolKey,
+        name: t.name,
+        description: t.description,
         requiresPro: t.requiresPro,
         coinCost,
         sortOrder: i,

@@ -26,8 +26,26 @@ const SAMPLE_VIDEOS = [
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
 ];
 
-const img = (seed: string, w = 800, h = 1100) =>
-  `https://picsum.photos/seed/${seed}/${w}/${h}`;
+// Real photos via loremflickr (picsum.photos is network-blocked in this env).
+// Deterministic per-seed: a hash picks the subject keyword + a stable `lock`
+// so the same card always shows the same photo. Falls back to the local SVG
+// placeholder route if loremflickr is ever unreachable (see next.config).
+const PHOTO_TAGS = [
+  "portrait",
+  "fashion",
+  "model",
+  "woman",
+  "man",
+  "face",
+  "beauty",
+  "girl",
+];
+const img = (seed: string, w = 800, h = 1100) => {
+  const n = hashString(seed);
+  const tag = PHOTO_TAGS[n % PHOTO_TAGS.length];
+  const lock = (n % 9000) + 1;
+  return `https://loremflickr.com/${w}/${h}/${tag}?lock=${lock}`;
+};
 
 const ASPECTS = [0.7, 0.75, 0.8, 1, 0.66];
 
