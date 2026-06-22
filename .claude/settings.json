@@ -60,7 +60,16 @@
       "Bash(curl -sL -o /dev/null -w \"%{http_code} %{time_total}s type=%{content_type}\\\\n\" --max-time 8 \"https://loremflickr.com/800/1100/portrait,woman?lock=1\")",
       "Bash(curl -sL -o /dev/null -w \"%{http_code} %{time_total}s type=%{content_type}\\\\n\" --max-time 8 \"https://loremflickr.com/800/1100/fashion?lock=2\")",
       "Bash(curl -sL -o /dev/null -w \"%{http_code} %{time_total}s type=%{content_type}\\\\n\" --max-time 8 \"https://loremflickr.com/800/1100/cinematic,portrait?lock=3\")",
-      "PowerShell(Get-NetTCPConnection -LocalPort 3000,3001 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Remove-Item -Recurse -Force \"E:\\\\Ai-prompt\\\\.next\" -ErrorAction SilentlyContinue; Write-Host \"Stopped & cleared\")"
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000,3001 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Remove-Item -Recurse -Force \"E:\\\\Ai-prompt\\\\.next\" -ErrorAction SilentlyContinue; Write-Host \"Stopped & cleared\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s\\\\n\" --max-time 8 \"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4\" -r 0-1000)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s\\\\n\" --max-time 8 \"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4\" -r 0-1000)",
+      "Bash(curl -sI -o /dev/null -w \"%{http_code} %{time_total}s\\\\n\" --max-time 8 \"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s type=%{content_type}\\\\n\" --max-time 10 \"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4\")",
+      "Bash(curl -sI -o /dev/null -w \"%{http_code} %{time_total}s\\\\n\" --max-time 8 \"https://www.w3schools.com/html/mov_bbb.mp4\")",
+      "Bash(curl -sI -o /dev/null -w \"%{http_code} %{time_total}s\\\\n\" --max-time 8 \"https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4\")",
+      "Bash(curl -sI -o /dev/null -w \"%{http_code} %{time_total}s\\\\n\" --max-time 8 \"https://samplelib.com/lib/preview/mp4/sample-5s.mp4\")",
+      "Bash(curl -sI -o /dev/null -w \"%{http_code} %{time_total}s\\\\n\" --max-time 8 \"https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4\")",
+      "Bash(curl -sI -o /dev/null -w \"%{http_code} %{time_total}s\\\\n\" --max-time 8 \"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4\")"
     ],
     "additionalDirectories": [
       "e:\\Ai-prompt\\.next\\dev\\cache\\turbopack",

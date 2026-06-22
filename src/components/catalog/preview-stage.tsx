@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { useReducedMotion } from "framer-motion";
 import { Gem } from "lucide-react";
@@ -8,7 +9,8 @@ import type { PromptDetail } from "@/lib/types";
 /** Cinematic preview frame on the detail page — looping video or still (§6). */
 export function PreviewStage({ item }: { item: PromptDetail }) {
   const reduce = useReducedMotion();
-  const isVideo = item.kind === "video" && Boolean(item.preview);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const isVideo = item.kind === "video" && Boolean(item.preview) && !videoFailed;
 
   return (
     <div
@@ -23,6 +25,7 @@ export function PreviewStage({ item }: { item: PromptDetail }) {
           loop
           playsInline
           poster={item.thumbnail ?? undefined}
+          onError={() => setVideoFailed(true)}
           className="h-full w-full object-cover"
         />
       ) : item.thumbnail ? (

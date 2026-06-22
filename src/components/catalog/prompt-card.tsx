@@ -31,7 +31,8 @@ export function PromptCard({
     setReduce(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
   const [hovering, setHovering] = useState(false);
-  const isVideo = item.kind === "video" && !!item.preview;
+  const [videoFailed, setVideoFailed] = useState(false);
+  const isVideo = item.kind === "video" && !!item.preview && !videoFailed;
 
   function onEnter() {
     setHovering(true);
@@ -78,7 +79,8 @@ export function PromptCard({
         <div className="absolute inset-0 grid place-items-center bg-surface-2 text-low">No preview</div>
       )}
 
-      {/* hover preview video (lazy-mounted) */}
+      {/* hover preview video (lazy-mounted). On load failure, fall back to the
+          thumbnail (videoFailed flips isVideo off, so the still stays visible). */}
       {isVideo && hovering && !reduce && (
         <video
           ref={videoRef}
@@ -87,6 +89,7 @@ export function PromptCard({
           loop
           playsInline
           preload="none"
+          onError={() => setVideoFailed(true)}
           className="absolute inset-0 h-full w-full object-cover"
         />
       )}

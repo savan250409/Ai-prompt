@@ -93,7 +93,7 @@ e5a6480 feat: M1 — scaffold, design system, theme, nav, home
 ```
 
 Verified live end-to-end on mocks: browse → locked detail (no leak) → register/login →
-unlock (Pro + watch-ad) → go Pro (coins) → generate image/video (spend/refund) → favorites →
+unlock (Pro + watch-ad) → go Pro (coins) → generate image/video (spend/refund) `→ favorites →
 My Media → phone save. Both themes ship.
 
 ---

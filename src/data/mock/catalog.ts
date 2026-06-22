@@ -13,17 +13,15 @@ import type {
 } from "@/lib/types";
 import { hashString, truncatePrompt } from "@/lib/utils";
 
-// Public sample videos (Google sample bucket) — reliable for hover previews.
+// Public sample videos for hover previews. The old Google sample bucket
+// (gtv-videos-bucket) now 403s, so these point at reliably-reachable hosts.
 const SAMPLE_VIDEOS = [
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+  "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4",
+  "https://test-videos.co.uk/vids/sintel/mp4/h264/720/Sintel_720_10s_1MB.mp4",
+  "https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4",
+  "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+  "https://www.w3schools.com/html/mov_bbb.mp4",
+  "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_2MB.mp4",
 ];
 
 // Real photos via loremflickr (picsum.photos is network-blocked in this env).
@@ -149,7 +147,7 @@ function buildCategories(
   return defs.map((d, i) => ({
     id: `${prefix}${i + 1}`,
     name: d.name,
-    image: img(`${prefix}cat${i}`, 700, 500),
+    image: img(`${prefix}cat${i}`, 480, 340),
     type: d.type,
     sortOrder: i,
     count: 16,
@@ -166,12 +164,13 @@ function buildPrompts(
     for (let i = 0; i < perCat; i++) {
       const seed = `${kind}-${ci}-${i}`;
       const aspect = ASPECTS[hashString(seed) % ASPECTS.length];
-      const h = Math.round(800 / aspect);
+      const w = 480;
+      const h = Math.round(w / aspect);
       out.push({
         id: `${kind === "video" ? "v" : "i"}_${cat.id}_${i + 1}`,
         kind,
         categoryId: cat.id,
-        thumbnail: img(seed, 800, h),
+        thumbnail: img(seed, w, h),
         preview: kind === "video" ? SAMPLE_VIDEOS[(ci * perCat + i) % SAMPLE_VIDEOS.length] : null,
         hint: `${cat.name} · ${kind === "video" ? "motion" : "still"} ${i + 1}`,
         aspect,
@@ -195,7 +194,7 @@ const images = buildPrompts(imageCategories, "image");
 const filterCategories: Category[] = FILTER_CATS.map((c, i) => ({
   id: `fc${i + 1}`,
   name: c.name,
-  image: img(`fc${i}`, 700, 500),
+  image: img(`fc${i}`, 480, 340),
   sortOrder: i,
   count: c.filters.length,
 }));
@@ -209,7 +208,7 @@ FILTER_CATS.forEach((c, ci) => {
       id,
       categoryId: `fc${ci + 1}`,
       name,
-      image: img(`filter-${ci}-${i}`, 600, 600),
+      image: img(`filter-${ci}-${i}`, 380, 380),
       promptPreview: truncatePrompt(`Reimagine the photo in ${name} style`, 10),
     });
     // full style prompt is server-only (never shipped with the list/detail)
@@ -225,8 +224,8 @@ const tools: Tool[] = TOOLS_DEF.map((t, i) => ({
   toolKey: t.toolKey,
   name: t.name,
   description: t.description,
-  beforeImage: img(`tool-before-${i}`, 600, 600),
-  afterImage: img(`tool-after-${i}`, 600, 600),
+  beforeImage: img(`tool-before-${i}`, 420, 420),
+  afterImage: img(`tool-after-${i}`, 420, 420),
   coinCost: 3,
   requiresPro: t.requiresPro,
   sortOrder: i,
@@ -298,9 +297,9 @@ export const mock = {
   tools: (): Tool[] => tools,
   toolByKey: (key: string): Tool | null => tools.find((t) => t.toolKey === key) ?? null,
 
-  // home rails
-  featuredVideos: (): PromptListItem[] => videos.slice(0, 12).map(toListItem),
-  featuredImages: (): PromptListItem[] => images.slice(0, 12).map(toListItem),
+  // home rails — kept lean for fast first paint (offscreen rail items lazy-load)
+  featuredVideos: (): PromptListItem[] => videos.slice(0, 8).map(toListItem),
+  featuredImages: (): PromptListItem[] => images.slice(0, 8).map(toListItem),
   mosaic: (): string[] =>
-    [...videos.slice(0, 9), ...images.slice(0, 9)].map((p) => p.thumbnail),
+    [...videos.slice(0, 5), ...images.slice(0, 5)].map((p) => p.thumbnail),
 };
