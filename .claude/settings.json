@@ -123,7 +123,12 @@
       "Bash(echo \"source tsc errors: $\\(npx tsc --noEmit 2>&1)",
       "Bash(xargs echo \"  main image opacity-0 count \\(0 = visible\\):\")",
       "Bash(openssl rand *)",
-      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('base64'\\)\\)\")"
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('base64'\\)\\)\")",
+      "Bash(head -1)",
+      "Bash(echo \"  no server on 3000\")",
+      "Bash(echo \"=== raw API: video category 0 \\(Latest\\) — does it return item 64? ===\")",
+      "Bash(curl -s --max-time 40 __TRACKED_VAR__/ngd/getAiVideoByCategoryId -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' --data '{\"category_id\":0}')",
+      "Bash(node -e 'let s=\"\";process.stdin.on\\(\"data\",d=>s+=d\\).on\\(\"end\",\\(\\)=>{try{const d=JSON.parse\\(s\\);console.log\\(\"  http data items:\",Array.isArray\\(d.data\\)?d.data.length:\"none\",\"| has 64?\",Array.isArray\\(d.data\\)&&d.data.some\\(x=>String\\(x.id\\)===\"64\"\\)\\)}catch\\(e\\){console.log\\(\"  API returned non-JSON / failed:\",s.slice\\(0,100\\)\\)}}\\)')"
     ],
     "additionalDirectories": [
       "e:\\Ai-prompt\\.next\\dev\\cache\\turbopack",

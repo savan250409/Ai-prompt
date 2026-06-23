@@ -134,6 +134,10 @@ async function fetchData<T>(pathname: string, init: RequestInit): Promise<T[]> {
       if (!res.ok) throw new Error(`${pathname} -> ${res.status}`);
       const json = (await res.json()) as ApiEnvelope<T>;
       if (!Array.isArray(json?.data)) throw new Error(`${pathname} -> no data`);
+      // The flaky API sometimes returns an empty array on a hiccup. Treat empty
+      // as a transient failure so it's NOT cached (which would stick a 404 for
+      // 30 min); it retries and self-heals once the API returns real data.
+      if (json.data.length === 0) throw new Error(`${pathname} -> empty`);
       return json.data;
     } catch (e) {
       lastErr = e;
@@ -313,7 +317,7 @@ async function imageIndex(): Promise<ImageIdx> {
   );
   const m: ImageIdx = new Map();
   for (const { catId, items } of lists) for (const it of items) m.set(String(it.id), { it, catId });
-  imageIdxMemo = { t: Date.now(), m };
+  if (m.size > 0) imageIdxMemo = { t: Date.now(), m }; // don't memoize a failed/empty build
   return m;
 }
 
@@ -328,7 +332,7 @@ async function videoIndex(): Promise<VideoIdx> {
   );
   const m: VideoIdx = new Map();
   for (const { catId, items } of lists) for (const it of items) m.set(String(it.id), { it, catId });
-  videoIdxMemo = { t: Date.now(), m };
+  if (m.size > 0) videoIdxMemo = { t: Date.now(), m }; // don't memoize a failed/empty build
   return m;
 }
 
