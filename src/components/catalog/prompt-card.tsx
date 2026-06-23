@@ -31,6 +31,7 @@ export function PromptCard({
     setReduce(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
   const [hovering, setHovering] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
   const isVideo = item.kind === "video" && !!item.preview && !videoFailed;
 
@@ -43,6 +44,7 @@ export function PromptCard({
   }
   function onLeave() {
     setHovering(false);
+    setPlaying(false);
     const v = videoRef.current;
     if (v) {
       v.pause();
@@ -50,9 +52,15 @@ export function PromptCard({
     }
   }
 
+  // pass the category as a hint so the detail page loads from ONE category
+  // fetch (often already cached) instead of building a cross-category index.
+  const href = item.categoryId
+    ? `${promptHref(item)}?c=${encodeURIComponent(item.categoryId)}`
+    : promptHref(item);
+
   return (
     <Link
-      href={promptHref(item)}
+      href={href}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       className={cn(
@@ -71,26 +79,37 @@ export function PromptCard({
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 22vw"
           priority={priority}
           className={cn(
-            "object-cover transition-transform duration-slow ease-out-expo group-hover:scale-[1.04]",
-            isVideo && hovering && "opacity-0",
+            // VISIBLE by default (CSS fade, no JS) so the grid shows instantly on
+            // a hard load; only hidden while the hover-preview video is playing.
+            "animate-media-in object-cover transition-transform duration-slow ease-out-expo group-hover:scale-[1.04]",
+            isVideo && playing && "opacity-0",
           )}
         />
       ) : (
         <div className="absolute inset-0 grid place-items-center bg-surface-2 text-low">No preview</div>
       )}
 
-      {/* hover preview video (lazy-mounted). On load failure, fall back to the
-          thumbnail (videoFailed flips isVideo off, so the still stays visible). */}
+      {/* hover preview video (lazy-mounted, layered OVER the still). It only
+          reveals the still beneath once it's playing; on load failure it falls
+          back to the thumbnail (videoFailed flips isVideo off). */}
       {isVideo && hovering && !reduce && (
         <video
           ref={videoRef}
           src={item.preview!}
+          poster={item.thumbnail ?? undefined}
           muted
           loop
           playsInline
           preload="none"
-          onError={() => setVideoFailed(true)}
-          className="absolute inset-0 h-full w-full object-cover"
+          onPlaying={() => setPlaying(true)}
+          onError={() => {
+            setVideoFailed(true);
+            setPlaying(false);
+          }}
+          className={cn(
+            "absolute inset-0 h-full w-full object-cover transition-opacity duration-base",
+            playing ? "opacity-100" : "opacity-0",
+          )}
         />
       )}
 

@@ -7,19 +7,29 @@ import { PromptDetailView } from "@/components/catalog/prompt-detail";
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ c?: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const item = await catalog.videoDetail(id, false);
+  const { c } = await searchParams;
+  const item = await catalog.videoDetail(id, false, c);
   if (!item) return { title: "Video Prompt" };
   return { title: item.hint ?? "Video Prompt", description: item.promptPreview };
 }
 
-export default async function VideoPromptPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function VideoPromptPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ c?: string }>;
+}) {
   const { id } = await params;
+  const { c } = await searchParams;
   const unlocked = await isPromptUnlocked("video", id);
-  const item = await catalog.videoDetail(id, unlocked);
+  const item = await catalog.videoDetail(id, unlocked, c);
   if (!item) notFound();
 
   const viewer = await getViewer();

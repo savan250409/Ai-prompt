@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { SmoothImage } from "@/components/ui/smooth-image";
 import type { FilterItem } from "@/lib/types";
 
 export function FilterCard({ filter, priority }: { filter: FilterItem; priority?: boolean }) {
@@ -9,7 +9,7 @@ export function FilterCard({ filter, priority }: { filter: FilterItem; priority?
       className="group relative block aspect-square overflow-hidden rounded-card border border-hairline bg-surface-2 shadow-card transition-all duration-base ease-out-expo hover:-translate-y-1 hover:shadow-card-hover"
     >
       {filter.image && (
-        <Image
+        <SmoothImage
           src={filter.image}
           alt={filter.name}
           fill

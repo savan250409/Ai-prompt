@@ -18,9 +18,14 @@ const nextConfig = {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },
   images: {
-    unoptimized: true,
-    dangerouslyAllowSVG: true,
+    // Optimizer ON: resize to display size + serve AVIF/WebP. The catalog CDN
+    // is server-reachable, so this cuts image bytes ~5-8x vs. full-size files.
+    dangerouslyAllowSVG: true, // placeholder route serves SVG
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400, // cache optimized variants 24h
     remotePatterns: [
+      // live upstream catalog API media (aivibecode)
+      { protocol: "https", hostname: "aiphotomaker.aivibecode.in" },
       // mock/seed real photos (picsum is network-blocked here; loremflickr works)
       { protocol: "https", hostname: "loremflickr.com" },
       { protocol: "https", hostname: "*.staticflickr.com" },

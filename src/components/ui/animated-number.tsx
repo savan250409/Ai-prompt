@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { animate } from "framer-motion";
 
-/** Count-up / coin-roll — §11.6. Tweens whenever `value` changes. */
+/** Count-up / coin-roll — §11.6. Tweens whenever `value` changes (native rAF). */
 export function AnimatedNumber({
   value,
   className,
@@ -28,14 +27,17 @@ export function AnimatedNumber({
       node.textContent = value.toLocaleString("en-IN");
       return;
     }
-    const controls = animate(from, value, {
-      duration,
-      ease: [0.22, 1, 0.36, 1],
-      onUpdate: (v) => {
-        node.textContent = Math.round(v).toLocaleString("en-IN");
-      },
-    });
-    return () => controls.stop();
+    let raf = 0;
+    const start = performance.now();
+    const ms = Math.max(1, duration * 1000);
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / ms);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      node.textContent = Math.round(from + (value - from) * eased).toLocaleString("en-IN");
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, [value, duration]);
 
   return (

@@ -15,8 +15,19 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function resolveMedia(path?: string | null): string | null {
   if (!path) return null;
-  const p = path.trim();
+  let p = path.trim();
   if (!p) return null;
+  // Some legacy columns store the filename as a JSON array, e.g. `["a.webp"]`
+  // (or a comma-joined list). Take the first entry so we resolve a real file.
+  if (p.startsWith("[")) {
+    try {
+      const arr = JSON.parse(p);
+      p = (Array.isArray(arr) ? arr[0] : p)?.toString().trim() ?? "";
+    } catch {
+      p = p.replace(/^\[|\]$/g, "").split(",")[0].replace(/^["']|["']$/g, "").trim();
+    }
+    if (!p) return null;
+  }
   if (/^(https?:|data:|blob:)/i.test(p)) return p;
   const base = config.mediaBaseUrl.replace(/\/+$/, "");
   const rel = p.replace(/^\/+/, "");

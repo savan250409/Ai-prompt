@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
 import { NAV_ITEMS, isActivePath } from "./nav-items";
 import { cn } from "@/lib/utils";
 
@@ -34,11 +33,7 @@ export function BottomNav() {
                 )}
               >
                 {active && (
-                  <motion.span
-                    layoutId="bottom-nav-indicator"
-                    className="absolute -top-0.5 h-1 w-8 rounded-full bg-grad-electric"
-                    transition={{ type: "spring", stiffness: 320, damping: 30 }}
-                  />
+                  <span className="absolute -top-0.5 h-1 w-8 rounded-full bg-grad-electric" />
                 )}
                 <Icon className="h-5 w-5" />
                 <span className="leading-none">{item.label}</span>

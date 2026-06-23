@@ -14,9 +14,32 @@ export const config = {
   // ---- data source -------------------------------------------------------
   databaseUrl: process.env.DATABASE_URL ?? "",
   existingApiBaseUrl: process.env.EXISTING_API_BASE_URL ?? "",
-  /** When no DB and no upstream API are configured, render from local seed. */
+
+  // ---- upstream catalog API (aivibecode) — §1.1 Approach A --------------
+  // When set, image/video/filter content is read LIVE from this API instead of
+  // a local DB or mock. Token is server-side only (never shipped to client).
+  api: {
+    baseUrl: (process.env.CATALOG_API_BASE_URL ?? "").replace(/\/+$/, ""),
+    token: process.env.CATALOG_API_TOKEN ?? "",
+    get enabled() {
+      return Boolean(this.baseUrl && this.token);
+    },
+  },
+
+  /** When no API, no DB and no upstream API are configured, render from seed. */
   get useMockCatalog() {
-    return !this.databaseUrl && !this.existingApiBaseUrl;
+    return !this.api.enabled && !this.databaseUrl && !this.existingApiBaseUrl;
+  },
+  /**
+   * The web store (users / coins / favorites / generations) uses Prisma ONLY
+   * when explicitly enabled with WEB_STORE=prisma AND a DB is set. This is kept
+   * separate from the read-only catalog so pointing DATABASE_URL at a SHARED or
+   * legacy DB (e.g. one already owned by another app, with its own users/
+   * sessions tables) renders the catalog without forcing the app's own web
+   * tables onto it. Enable once the web_* tables have been created (db push).
+   */
+  get useDbWebStore() {
+    return Boolean(this.databaseUrl) && process.env.WEB_STORE === "prisma";
   },
 
   // ---- media -------------------------------------------------------------

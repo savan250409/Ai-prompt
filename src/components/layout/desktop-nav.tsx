@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
 import { NAV_ITEMS, isActivePath } from "./nav-items";
 import { cn } from "@/lib/utils";
 
-/** Desktop top nav — active gradient fill + sliding indicator (§11.6). */
+/** Desktop top nav — active gradient fill indicator (§11.6). */
 export function DesktopNav() {
   const pathname = usePathname();
 
@@ -25,13 +24,7 @@ export function DesktopNav() {
               active ? "text-hi" : "text-mid hover:text-hi",
             )}
           >
-            {active && (
-              <motion.span
-                layoutId="desktop-nav-pill"
-                className="nav-active absolute inset-0 rounded-pill"
-                transition={{ type: "spring", stiffness: 320, damping: 30 }}
-              />
-            )}
+            {active && <span className="nav-active absolute inset-0 rounded-pill" />}
             <span className="relative inline-flex items-center gap-2">
               <Icon className={cn("h-4 w-4", active && "text-cyan")} />
               {item.label}

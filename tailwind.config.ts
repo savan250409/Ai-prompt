@@ -100,6 +100,10 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(16px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        "media-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
         "pulse-ring": {
           "0%": { boxShadow: "0 0 0 0 rgba(34,211,238,0.45)" },
           "70%": { boxShadow: "0 0 0 12px rgba(34,211,238,0)" },
@@ -117,6 +121,7 @@ const config: Config = {
         "gold-sweep": "gold-sweep 1.1s ease-out forwards",
         float: "float 6s ease-in-out infinite",
         "fade-rise": "fade-rise 0.5s cubic-bezier(0.22,1,0.36,1) both",
+        "media-in": "media-in 0.45s ease-out both",
         "pulse-ring": "pulse-ring 2s cubic-bezier(0.22,1,0.36,1) infinite",
         "marquee-up": "marquee-y 42s linear infinite",
         "marquee-down": "marquee-y 42s linear infinite reverse",

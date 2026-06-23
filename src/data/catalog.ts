@@ -16,6 +16,7 @@ import { config } from "@/lib/config";
 import { hasDatabase } from "@/lib/prisma";
 import { mock } from "./mock/catalog";
 import { dbCatalog } from "./db/catalog";
+import { apiCatalog } from "./api/catalog";
 
 // Async wrapper over the mock seed (matches dbCatalog's shape).
 const mockSource: typeof dbCatalog = {
@@ -24,9 +25,9 @@ const mockSource: typeof dbCatalog = {
   filterCategories: async () => mock.filterCategories(),
   videosByCategory: async (id, paging) => mock.videosByCategory(id, paging),
   imagesByCategory: async (id, paging) => mock.imagesByCategory(id, paging),
-  videoDetail: async (id, unlocked) => mock.videoDetail(id, unlocked),
-  imageDetail: async (id, unlocked) => mock.imageDetail(id, unlocked),
-  rawPrompt: async (kind, id) => mock.rawPrompt(kind, id),
+  videoDetail: async (id, unlocked, _categoryId) => mock.videoDetail(id, unlocked),
+  imageDetail: async (id, unlocked, _categoryId) => mock.imageDetail(id, unlocked),
+  rawPrompt: async (kind, id, _categoryId) => mock.rawPrompt(kind, id),
   filters: async (categoryId) => mock.filters(categoryId),
   filterDetail: async (id) => mock.filterDetail(id),
   filterPrompt: async (id) => mock.filterPrompt(id),
@@ -37,10 +38,13 @@ const mockSource: typeof dbCatalog = {
   mosaic: async () => mock.mosaic(),
 };
 
-// TODO(integration): when config.existingApiBaseUrl is set (and no DB), use an
-// apiCatalog that fetches the upstream API (optional Approach A, §1.1). Shape
-// is defined by the owner's API; until then DB-or-mock covers all flows.
-const source: typeof dbCatalog = hasDatabase ? dbCatalog : mockSource;
+// Source precedence (§1.1): live upstream API > local DB > local mock seed.
+// The API source reads image/video/filter content directly from aivibecode.
+const source: typeof dbCatalog = config.api.enabled
+  ? apiCatalog
+  : hasDatabase
+    ? dbCatalog
+    : mockSource;
 
 export const catalog = {
   videoCategories: (): Promise<Category[]> => source.videoCategories(),
@@ -56,14 +60,14 @@ export const catalog = {
     paging?: { skip?: number; take?: number },
   ): Promise<PromptListItem[]> => source.imagesByCategory(categoryId, paging),
 
-  videoDetail: (id: string, unlocked: boolean): Promise<PromptDetail | null> =>
-    source.videoDetail(id, unlocked),
-  imageDetail: (id: string, unlocked: boolean): Promise<PromptDetail | null> =>
-    source.imageDetail(id, unlocked),
+  videoDetail: (id: string, unlocked: boolean, categoryId?: string): Promise<PromptDetail | null> =>
+    source.videoDetail(id, unlocked, categoryId),
+  imageDetail: (id: string, unlocked: boolean, categoryId?: string): Promise<PromptDetail | null> =>
+    source.imageDetail(id, unlocked, categoryId),
 
   /** Server-only: full prompt text (used after an unlock is verified). */
-  rawPrompt: (kind: "video" | "image", id: string): Promise<string | null> =>
-    source.rawPrompt(kind, id),
+  rawPrompt: (kind: "video" | "image", id: string, categoryId?: string): Promise<string | null> =>
+    source.rawPrompt(kind, id, categoryId),
 
   filters: (categoryId?: string): Promise<FilterItem[]> => source.filters(categoryId),
   filterDetail: (id: string): Promise<FilterItem | null> => source.filterDetail(id),

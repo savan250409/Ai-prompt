@@ -37,7 +37,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // suppressHydrationWarning: next-themes sets data-theme on <html> pre-paint
-    <html lang="en" suppressHydrationWarning className={fontVariables}>
+    // data-scroll-behavior: scope smooth scroll so Next disables it on route change
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={fontVariables}>
       <body className="font-sans antialiased">
         <Providers>
           <AppShell>{children}</AppShell>

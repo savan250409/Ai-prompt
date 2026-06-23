@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SmoothImage } from "@/components/ui/smooth-image";
 import Link from "next/link";
 import { ArrowRight, Gem, Sparkles } from "lucide-react";
 import { buttonClass } from "@/components/ui/button-variants";
@@ -38,7 +38,7 @@ export function MosaicHero({ images }: { images: string[] }) {
                 key={i}
                 className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-hairline"
               >
-                <Image src={src} alt="" fill sizes="20vw" className="object-cover" />
+                <SmoothImage src={src} alt="" fill sizes="20vw" className="object-cover" />
               </div>
             ))}
           </div>

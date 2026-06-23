@@ -1,9 +1,12 @@
-"use client";
-
 import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
-/** Staggered scroll-reveal — opacity + 16px rise, once (§11.6). */
+/**
+ * Entrance reveal — opacity + 16px rise (§11.6). Pure CSS animation that runs on
+ * paint and completes WITHOUT JavaScript, so the content is visible immediately
+ * on a hard load instead of waiting for hydration. Reduced-motion users get the
+ * content with no movement (the animation is opacity/transform only and short).
+ */
 export function Reveal({
   children,
   delay = 0,
@@ -13,18 +16,12 @@ export function Reveal({
   delay?: number;
   className?: string;
 }) {
-  const reduce = useReducedMotion();
-  if (reduce) return <div className={className}>{children}</div>;
-
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay }}
+    <div
+      className={cn("motion-safe:animate-fade-rise", className)}
+      style={delay ? { animationDelay: `${delay}s` } : undefined}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

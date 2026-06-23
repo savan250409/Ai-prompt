@@ -38,3 +38,5 @@ next-env.d.ts
 
 # prisma generated client
 /src/generated
+# persistent catalog cache (stale-while-revalidate)
+.catalog-cache/

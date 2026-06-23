@@ -159,17 +159,30 @@ export const dbCatalog = {
       })
     ).map((i) => imageListItem(i as ImageRow)),
 
-  videoDetail: async (id: string, unlocked: boolean): Promise<PromptDetail | null> => {
+  // _categoryId: optional hint used by the API source; ignored here (by-id is fast).
+  videoDetail: async (
+    id: string,
+    unlocked: boolean,
+    _categoryId?: string,
+  ): Promise<PromptDetail | null> => {
     const v = await getPrisma().ngendev_videos.findUnique({ where: { id: toBig(id) } });
     return v ? videoDetail(v as VideoRow, unlocked) : null;
   },
 
-  imageDetail: async (id: string, unlocked: boolean): Promise<PromptDetail | null> => {
+  imageDetail: async (
+    id: string,
+    unlocked: boolean,
+    _categoryId?: string,
+  ): Promise<PromptDetail | null> => {
     const i = await getPrisma().ngendev_images.findUnique({ where: { id: toBig(id) } });
     return i ? imageDetail(i as ImageRow, unlocked) : null;
   },
 
-  rawPrompt: async (kind: "video" | "image", id: string): Promise<string | null> => {
+  rawPrompt: async (
+    kind: "video" | "image",
+    id: string,
+    _categoryId?: string,
+  ): Promise<string | null> => {
     if (kind === "video") {
       const v = await getPrisma().ngendev_videos.findUnique({
         where: { id: toBig(id) },
@@ -223,7 +236,14 @@ export const dbCatalog = {
   },
 
   tools: async (): Promise<Tool[]> => {
-    const rows = await getPrisma().aiTool.findMany({ where: visible, orderBy: { sortOrder: "asc" } });
+    // ai_tools is app-owned; on a shared/legacy DB it may not exist yet, so
+    // fall back to the built-in tool defs rather than 500 the page.
+    let rows: Awaited<ReturnType<ReturnType<typeof getPrisma>["aiTool"]["findMany"]>>;
+    try {
+      rows = await getPrisma().aiTool.findMany({ where: visible, orderBy: { sortOrder: "asc" } });
+    } catch {
+      return fallbackTools();
+    }
     if (rows.length === 0) return fallbackTools();
     return rows.map((t) => ({
       id: t.id,
@@ -239,7 +259,12 @@ export const dbCatalog = {
   },
 
   toolByKey: async (key: string): Promise<Tool | null> => {
-    const t = await getPrisma().aiTool.findUnique({ where: { toolKey: key } });
+    let t: Awaited<ReturnType<ReturnType<typeof getPrisma>["aiTool"]["findUnique"]>> = null;
+    try {
+      t = await getPrisma().aiTool.findUnique({ where: { toolKey: key } });
+    } catch {
+      return fallbackTools().find((x) => x.toolKey === key) ?? null;
+    }
     if (!t) return fallbackTools().find((x) => x.toolKey === key) ?? null;
     return {
       id: t.id,

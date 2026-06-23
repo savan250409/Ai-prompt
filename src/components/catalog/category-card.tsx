@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { SmoothImage } from "@/components/ui/smooth-image";
 import { ArrowUpRight } from "lucide-react";
 import type { Category } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,7 @@ export function CategoryCard({
       )}
     >
       {category.image && (
-        <Image
+        <SmoothImage
           src={category.image}
           alt={category.name}
           fill

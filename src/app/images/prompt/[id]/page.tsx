@@ -7,19 +7,29 @@ import { PromptDetailView } from "@/components/catalog/prompt-detail";
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ c?: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const item = await catalog.imageDetail(id, false);
+  const { c } = await searchParams;
+  const item = await catalog.imageDetail(id, false, c);
   if (!item) return { title: "Photo Prompt" };
   return { title: item.hint ?? "Photo Prompt", description: item.promptPreview };
 }
 
-export default async function ImagePromptPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ImagePromptPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ c?: string }>;
+}) {
   const { id } = await params;
+  const { c } = await searchParams;
   const unlocked = await isPromptUnlocked("image", id);
-  const item = await catalog.imageDetail(id, unlocked);
+  const item = await catalog.imageDetail(id, unlocked, c);
   if (!item) notFound();
 
   const viewer = await getViewer();
