@@ -12,7 +12,8 @@ interface Page {
   nextSkip: number | null;
 }
 
-const TAKE = 24;
+// One screenful per batch; the next batch loads on scroll (§6).
+const TAKE = 9;
 
 /**
  * Masonry of prompt thumbnails with infinite scroll (§6). Seeded from SSR so
@@ -23,11 +24,13 @@ export function PromptMasonry({
   categoryId,
   initialItems,
   initialNextSkip,
+  pageSize = TAKE,
 }: {
   kind: "video" | "image";
   categoryId: string;
   initialItems: PromptListItem[];
   initialNextSkip: number | null;
+  pageSize?: number;
 }) {
   const base =
     kind === "video"
@@ -37,7 +40,7 @@ export function PromptMasonry({
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ["prompts", kind, categoryId],
     queryFn: async ({ pageParam }): Promise<Page> => {
-      const res = await fetch(`${base}?skip=${pageParam}&take=${TAKE}`);
+      const res = await fetch(`${base}?skip=${pageParam}&take=${pageSize}`);
       if (!res.ok) throw new Error("Failed to load prompts");
       return res.json();
     },

@@ -7,7 +7,7 @@ import { Breadcrumb } from "@/components/catalog/breadcrumb";
 import { PromptMasonry } from "@/components/catalog/prompt-masonry";
 import { pluralize } from "@/lib/utils";
 
-const TAKE = 24;
+const TAKE = 9;
 
 export async function generateMetadata({
   params,

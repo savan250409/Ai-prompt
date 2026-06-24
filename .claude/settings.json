@@ -128,7 +128,16 @@
       "Bash(echo \"  no server on 3000\")",
       "Bash(echo \"=== raw API: video category 0 \\(Latest\\) — does it return item 64? ===\")",
       "Bash(curl -s --max-time 40 __TRACKED_VAR__/ngd/getAiVideoByCategoryId -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' --data '{\"category_id\":0}')",
-      "Bash(node -e 'let s=\"\";process.stdin.on\\(\"data\",d=>s+=d\\).on\\(\"end\",\\(\\)=>{try{const d=JSON.parse\\(s\\);console.log\\(\"  http data items:\",Array.isArray\\(d.data\\)?d.data.length:\"none\",\"| has 64?\",Array.isArray\\(d.data\\)&&d.data.some\\(x=>String\\(x.id\\)===\"64\"\\)\\)}catch\\(e\\){console.log\\(\"  API returned non-JSON / failed:\",s.slice\\(0,100\\)\\)}}\\)')"
+      "Bash(node -e 'let s=\"\";process.stdin.on\\(\"data\",d=>s+=d\\).on\\(\"end\",\\(\\)=>{try{const d=JSON.parse\\(s\\);console.log\\(\"  http data items:\",Array.isArray\\(d.data\\)?d.data.length:\"none\",\"| has 64?\",Array.isArray\\(d.data\\)&&d.data.some\\(x=>String\\(x.id\\)===\"64\"\\)\\)}catch\\(e\\){console.log\\(\"  API returned non-JSON / failed:\",s.slice\\(0,100\\)\\)}}\\)')",
+      "Bash(DATABASE_URL='mysql://root:@127.0.0.1:3306/dev-ai-prompt' npx prisma db push --skip-generate)",
+      "Bash(DATABASE_URL='mysql://root:@127.0.0.1:3306/dev-ai-prompt' npx prisma db push)",
+      "Bash(e:/xampp/mysql/bin/mysql.exe -u root dev-ai-prompt -e 'SHOW TABLES;')",
+      "Bash(DATABASE_URL='mysql://root:@127.0.0.1:3306/dev-ai-prompt' npx tsx prisma/seed.ts)",
+      "Bash(\"e:/xampp/mysql/bin/mysql.exe\" -u root \"dev-ai-prompt\" -e \"SELECT tool_key, name, requires_pro FROM ai_tools ORDER BY sort_order;\")",
+      "Bash(curl -s --max-time 30 -X POST \"http://localhost:3000/api/auth/register\" -H \"Content-Type: application/json\" --data '{\"name\":\"Test User\",\"email\":\"test@example.com\",\"password\":\"testpass123\"}' -w \"\\\\n  HTTP: %{http_code}\\\\n\")",
+      "Bash(\"e:/xampp/mysql/bin/mysql.exe\" -u root \"dev-ai-prompt\" -e \"SELECT id, name, email, \\(password_hash IS NOT NULL\\) AS has_pw FROM users;\")",
+      "Bash(curl -s --max-time 30 \"http://localhost:3000/api/me\" -w \"\\\\n  HTTP: %{http_code}\\\\n\")",
+      "PowerShell(npx tsc --noEmit)"
     ],
     "additionalDirectories": [
       "e:\\Ai-prompt\\.next\\dev\\cache\\turbopack",

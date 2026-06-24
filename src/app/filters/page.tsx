@@ -5,6 +5,7 @@ import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { SectionHeader } from "@/components/catalog/section-header";
 import { FilterCard } from "@/components/catalog/filter-card";
+import { ProgressiveGrid } from "@/components/catalog/progressive-grid";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 
@@ -55,11 +56,14 @@ export default async function FiltersPage({
         {filters.length === 0 ? (
           <EmptyState title="No filters here yet" hint="More styles are on the way." />
         ) : selected ? (
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          <ProgressiveGrid
+            step={9}
+            className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6"
+          >
             {filters.map((f, i) => (
               <FilterCard key={f.id} filter={f} priority={i < 6} />
             ))}
-          </div>
+          </ProgressiveGrid>
         ) : (
           cats.map((c) => {
             const items = filters.filter((f) => f.categoryId === c.id);

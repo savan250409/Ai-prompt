@@ -20,7 +20,7 @@ export default async function HomePage() {
     <>
       <MosaicHero images={mosaic} />
 
-      <Container className="space-y-16 py-16 md:space-y-20 md:py-20">
+      <Container className="space-y-16 pb-16 pt-10 md:space-y-20 md:pb-20 md:pt-12">
         <Reveal>
           <section>
             <SectionHeader

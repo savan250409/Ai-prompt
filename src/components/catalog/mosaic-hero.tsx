@@ -49,7 +49,7 @@ export function MosaicHero({ images }: { images: string[] }) {
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-ink/75 via-ink/45 to-ink" />
 
       {/* value prop */}
-      <div className="mx-auto flex max-w-3xl flex-col items-center px-4 py-24 text-center md:py-36">
+      <div className="mx-auto flex max-w-3xl flex-col items-center px-4 pb-14 pt-24 text-center md:pb-16 md:pt-36">
         <span className="mb-5 inline-flex items-center gap-2 rounded-pill border border-hairline bg-glass px-3.5 py-1.5 text-caption font-medium text-mid backdrop-blur">
           <Sparkles className="h-3.5 w-3.5 text-cyan" />
           AI media studio · new drops every week
