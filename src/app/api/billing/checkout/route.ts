@@ -1,5 +1,12 @@
 import { getViewer } from "@/server/entitlements";
-import { activatePlan, createOrder, isValidPlan } from "@/server/billing";
+import {
+  activatePlan,
+  createOrder,
+  createSubscription,
+  hasSubscriptionPlan,
+  isValidPlan,
+  planById,
+} from "@/server/billing";
 import { store } from "@/server/store";
 import { config } from "@/lib/config";
 import { ok, fail } from "@/lib/http";
@@ -21,26 +28,32 @@ export async function POST(req: Request) {
     return ok({ mode: "test", activated: true, coins: result.coins });
   }
 
-  if (!config.cashfree.enabled) {
+  if (!config.razorpay.enabled) {
     return fail(503, "Payments are not configured yet.");
   }
 
-  // Real mode — create a Cashfree order; the client opens Checkout with the
-  // payment_session_id. Activation happens via the signed webhook.
   const user = await store.users.findById(viewer.userId);
+  const prefill = { name: user?.name ?? "", email: user?.email ?? "", contact: user?.phone ?? "" };
 
-  // Cashfree requires a customer phone. If the user hasn't saved one, ask the
-  // client to collect it, then it retries checkout.
-  if (!user?.phone) {
-    return ok({ mode: "need_phone" });
+  // Preferred — recurring Razorpay Subscription against the dashboard plan id.
+  if (hasSubscriptionPlan(plan)) {
+    const sub = await createSubscription(plan, viewer.userId);
+    return ok({
+      mode: "razorpay_subscription",
+      ...sub,
+      name: "Prompt Studio",
+      description: `${planById(plan).name} plan`,
+      prefill,
+    });
   }
 
-  const { orderId, paymentSessionId } = await createOrder(
-    plan,
-    viewer.userId,
-    user.email,
-    user.phone,
-    Date.now(),
-  );
-  return ok({ mode: "cashfree", orderId, paymentSessionId, env: config.cashfree.env });
+  // Fallback — one-time order (used if a plan has no subscription id set).
+  const order = await createOrder(plan, viewer.userId, user?.email ?? "", user?.phone ?? null, Date.now());
+  return ok({
+    mode: "razorpay",
+    ...order,
+    name: "Prompt Studio",
+    description: `${planById(plan).name} plan`,
+    prefill,
+  });
 }

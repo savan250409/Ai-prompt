@@ -85,6 +85,12 @@ const coins: CoinStore = {
       createdAt: r.createdAt,
     }));
   },
+  async existsByReference(referenceType, referenceId) {
+    const t = await getPrisma().coinTransaction.findFirst({
+      where: { referenceType, referenceId },
+    });
+    return t !== null;
+  },
   async record({ userId, delta, reason, referenceType = null, referenceId = null }) {
     await getPrisma().coinTransaction.create({ data: { userId, delta, reason, referenceType, referenceId } });
     return coins.balance(userId);
@@ -108,7 +114,12 @@ const coins: CoinStore = {
 const subscriptions: SubscriptionStore = {
   async activeFor(userId) {
     const s = await getPrisma().subscription.findFirst({
-      where: { userId, status: "active", currentPeriodEnd: { gt: new Date() } },
+      // A cancelled sub keeps Pro until the paid period ends.
+      where: {
+        userId,
+        status: { in: ["active", "cancelled"] },
+        currentPeriodEnd: { gt: new Date() },
+      },
       orderBy: { currentPeriodEnd: "desc" },
     });
     return s
@@ -130,10 +141,17 @@ const subscriptions: SubscriptionStore = {
     const s = await getPrisma().subscription.findFirst({ where: { providerSubscriptionId } });
     return s !== null;
   },
+  async cancel(userId) {
+    await getPrisma().subscription.updateMany({
+      where: { userId, status: "active", currentPeriodEnd: { gt: new Date() } },
+      data: { status: "cancelled" },
+    });
+    return subscriptions.activeFor(userId);
+  },
   async activate({ userId, plan, providerSubscriptionId = null, periodStart, periodEnd }) {
     return getPrisma().$transaction(async (tx) => {
       await tx.subscription.updateMany({
-        where: { userId, status: "active" },
+        where: { userId, status: { in: ["active", "cancelled"] } },
         data: { status: "expired" },
       });
       const s = await tx.subscription.create({
@@ -155,6 +173,45 @@ const subscriptions: SubscriptionStore = {
         currentPeriodStart: s.currentPeriodStart,
         currentPeriodEnd: s.currentPeriodEnd,
       } as StoredSubscription;
+    });
+  },
+  async markCharged({ userId, plan, providerSubscriptionId, periodEnd }) {
+    const existing = await getPrisma().subscription.findFirst({
+      where: { providerSubscriptionId },
+    });
+    const toDto = (s: {
+      id: string;
+      userId: string;
+      plan: string;
+      status: string;
+      providerSubscriptionId: string | null;
+      currentPeriodStart: Date;
+      currentPeriodEnd: Date;
+    }) => s as unknown as StoredSubscription;
+
+    if (existing) {
+      const s = await getPrisma().subscription.update({
+        where: { id: existing.id },
+        data: { status: "active", plan, currentPeriodEnd: periodEnd },
+      });
+      return toDto(s);
+    }
+    return getPrisma().$transaction(async (tx) => {
+      await tx.subscription.updateMany({
+        where: { userId, status: { in: ["active", "cancelled"] } },
+        data: { status: "expired" },
+      });
+      const s = await tx.subscription.create({
+        data: {
+          userId,
+          plan,
+          status: "active",
+          providerSubscriptionId,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: periodEnd,
+        },
+      });
+      return toDto(s);
     });
   },
 };
@@ -282,6 +339,11 @@ const generations: GenerationStore = {
       orderBy: { createdAt: "desc" },
     });
     return rows.map(mapGen);
+  },
+  async countDoneToolSince(userId, toolKey, since) {
+    return getPrisma().generation.count({
+      where: { userId, toolKey, status: "done", createdAt: { gte: since } },
+    });
   },
 };
 

@@ -1,24 +1,40 @@
 import { describe, it, expect } from "vitest";
 import crypto from "node:crypto";
-import { verifyWebhookSignature, isValidPlan, planById } from "@/server/billing";
+import {
+  verifyWebhookSignature,
+  verifyPaymentSignature,
+  isValidPlan,
+  planById,
+} from "@/server/billing";
 
-const SECRET = "cf_test_secret"; // matches test/setup.ts
-const sign = (timestamp: string, body: string) =>
-  crypto.createHmac("sha256", SECRET).update(timestamp + body).digest("base64");
+const WEBHOOK_SECRET = "rzp_webhook_secret"; // matches test/setup.ts
+const KEY_SECRET = "rzp_test_secret"; // matches test/setup.ts
+const signWebhook = (body: string) =>
+  crypto.createHmac("sha256", WEBHOOK_SECRET).update(body).digest("hex");
+const signPayment = (orderId: string, paymentId: string) =>
+  crypto.createHmac("sha256", KEY_SECRET).update(`${orderId}|${paymentId}`).digest("hex");
 
-describe("verifyWebhookSignature (Cashfree)", () => {
-  const ts = "1700000000";
-  const body = JSON.stringify({ type: "PAYMENT_SUCCESS_WEBHOOK" });
+describe("verifyWebhookSignature (Razorpay)", () => {
+  const body = JSON.stringify({ event: "order.paid" });
 
-  it("accepts base64(HMAC-SHA256(timestamp + rawBody, secret))", () => {
-    expect(verifyWebhookSignature(body, ts, sign(ts, body))).toBe(true);
+  it("accepts hex(HMAC-SHA256(rawBody, webhookSecret))", () => {
+    expect(verifyWebhookSignature(body, signWebhook(body))).toBe(true);
   });
 
-  it("rejects tampered body, wrong timestamp, or missing signature", () => {
-    expect(verifyWebhookSignature(body + "x", ts, sign(ts, body))).toBe(false);
-    expect(verifyWebhookSignature(body, "1700000001", sign(ts, body))).toBe(false);
-    expect(verifyWebhookSignature(body, ts, "")).toBe(false);
-    expect(verifyWebhookSignature(body, "", sign(ts, body))).toBe(false);
+  it("rejects tampered body or missing signature", () => {
+    expect(verifyWebhookSignature(body + "x", signWebhook(body))).toBe(false);
+    expect(verifyWebhookSignature(body, "")).toBe(false);
+  });
+});
+
+describe("verifyPaymentSignature (Razorpay)", () => {
+  it("accepts hex(HMAC-SHA256(order|payment, keySecret))", () => {
+    expect(verifyPaymentSignature("order_1", "pay_1", signPayment("order_1", "pay_1"))).toBe(true);
+  });
+
+  it("rejects a wrong/forged signature", () => {
+    expect(verifyPaymentSignature("order_1", "pay_1", signPayment("order_1", "pay_2"))).toBe(false);
+    expect(verifyPaymentSignature("order_1", "pay_1", "")).toBe(false);
   });
 });
 

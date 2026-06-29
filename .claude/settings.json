@@ -137,14 +137,44 @@
       "Bash(curl -s --max-time 30 -X POST \"http://localhost:3000/api/auth/register\" -H \"Content-Type: application/json\" --data '{\"name\":\"Test User\",\"email\":\"test@example.com\",\"password\":\"testpass123\"}' -w \"\\\\n  HTTP: %{http_code}\\\\n\")",
       "Bash(\"e:/xampp/mysql/bin/mysql.exe\" -u root \"dev-ai-prompt\" -e \"SELECT id, name, email, \\(password_hash IS NOT NULL\\) AS has_pw FROM users;\")",
       "Bash(curl -s --max-time 30 \"http://localhost:3000/api/me\" -w \"\\\\n  HTTP: %{http_code}\\\\n\")",
-      "PowerShell(npx tsc --noEmit)"
+      "PowerShell(npx tsc --noEmit)",
+      "Bash(curl -s -X POST https://api.runware.ai/v1 -H 'Content-Type: application/json' -H 'Authorization: Bearer xGR0pQN1Zvz2iDiSmQ6iTGwGxOONus3m' -d '[{ *)",
+      "PowerShell(taskkill /PID 15536 /F 2>$null; Get-NetTCPConnection -LocalPort 3000,3001 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop; \"killed $_\" } catch {} }; Start-Sleep -Milliseconds 500; \"ports now free\")",
+      "PowerShell($p = Get-NetTCPConnection -LocalPort 3000,3001 -State Listen -ErrorAction SilentlyContinue; if \\($p\\) { \"still in use: \" + \\($p.OwningProcess -join ','\\) } else { \"3000 and 3001 are free\" })",
+      "PowerShell(npm run dev)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000,3001 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop; \"killed $_\" } catch {} }; Start-Sleep -Milliseconds 400; $p = Get-NetTCPConnection -LocalPort 3000,3001 -State Listen -ErrorAction SilentlyContinue; if \\($p\\) { \"still in use: \" + \\($p.OwningProcess -join ','\\) } else { \"3000 and 3001 are FREE\" })",
+      "PowerShell($p = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue; if \\($p\\) { \"3000 in use by \" + \\($p.OwningProcess -join ','\\) } else { \"3000 free\" })",
+      "Bash(curl -s -X POST https://api.runware.ai/v1 -H 'Content-Type: application/json' -H 'Authorization: Bearer xGR0pQN1Zvz2iDiSmQ6iTGwGxOONus3m' -d '[{\"taskType\":\"imageInference\",\"taskUUID\":\"11111111-1111-1111-1111-111111111111\",\"model\":\"google:4@1\",\"positivePrompt\":\"a cat astronaut\",\"width\":1024,\"height\":1024,\"numberResults\":1,\"outputType\":\"URL\",\"outputFormat\":\"JPG\",\"deliveryMethod\":\"sync\",\"seedImage\":\"https://im.runware.ai/image/os/a10dlim3/ws/3/ii/0a20b123-4618-4288-9a24-26b06c68274c.jpg\",\"providerSettings\":{\"google\":{\"safetyTolerance\":\"none\"}}}]')",
+      "Bash(curl -s -X POST https://api.runware.ai/v1 -H 'Content-Type: application/json' -H 'Authorization: Bearer xGR0pQN1Zvz2iDiSmQ6iTGwGxOONus3m' -d '[{\"taskType\":\"imageInference\",\"taskUUID\":\"22222222-2222-2222-2222-222222222222\",\"model\":\"google:4@1\",\"positivePrompt\":\"make this person wear a red football jersey, keep the face identical\",\"width\":864,\"height\":1184,\"numberResults\":1,\"outputType\":\"URL\",\"outputFormat\":\"JPG\",\"deliveryMethod\":\"sync\",\"referenceImages\":[\"https://im.runware.ai/image/os/a10dlim3/ws/3/ii/0a20b123-4618-4288-9a24-26b06c68274c.jpg\"],\"providerSettings\":{\"google\":{\"safetyTolerance\":\"none\"}}}]')",
+      "Bash(curl -s -X POST https://api.runware.ai/v1 -H 'Content-Type: application/json' -H 'Authorization: Bearer xGR0pQN1Zvz2iDiSmQ6iTGwGxOONus3m' -d '[{\"taskType\":\"videoInference\",\"taskUUID\":\"b14c06f7-24f9-4d24-9ef3-0bc624ed4571\",\"model\":\"bytedance:2@2\",\"positivePrompt\":\"gentle motion\",\"width\":480,\"height\":864,\"duration\":5,\"numberResults\":1,\"outputType\":\"URL\",\"outputFormat\":\"MP4\",\"deliveryMethod\":\"async\",\"frameImages\":[\"https://im.runware.ai/image/os/a06dlim3/ws/3/ii/f645d0ee-adb9-41aa-ac46-cf9b216b9091.jpg\"],\"providerSettings\":{\"bytedance\":{\"cameraFixed\":false}}}]')",
+      "Bash(curl -s -X POST https://api.runware.ai/v1 -H 'Content-Type: application/json' -H 'Authorization: Bearer xGR0pQN1Zvz2iDiSmQ6iTGwGxOONus3m' -d '[{\"taskType\":\"videoInference\",\"taskUUID\":\"b14c06f7-24f9-4d24-9ef3-0bc624ed4572\",\"model\":\"bytedance:2@2\",\"positivePrompt\":\"gentle motion\",\"width\":480,\"height\":864,\"duration\":5,\"numberResults\":1,\"outputType\":\"URL\",\"outputFormat\":\"MP4\",\"deliveryMethod\":\"async\",\"providerSettings\":{\"bytedance\":{\"cameraFixed\":false}}}]')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); items=d.get\\('items',d\\); print\\('video ids:', [str\\(i['id']\\) for i in items[:3]]\\)\")",
+      "Bash(curl -s __TRACKED_VAR__/api/video-categories)",
+      "PowerShell(npx prisma generate 2>&1)",
+      "PowerShell(npx prisma db push --skip-generate 2>&1)",
+      "PowerShell($env:DATABASE_URL=\"mysql://root:@127.0.0.1:3306/dev-ai-prompt\"; npx prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss 2>&1 | Select-Object -Last 12)",
+      "PowerShell($env:DATABASE_URL=\"mysql://root:@127.0.0.1:3306/dev-ai-prompt\"; npx prisma db push --accept-data-loss 2>&1 | Select-Object -First 25)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000,3001 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop } catch {} }; Start-Sleep -Milliseconds 500; \"ports freed\")",
+      "Bash(npm run dev > /tmp/devsrv.log 2>&1 & *)",
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "PowerShell(if \\($?\\) { \"TSC CLEAN\" })",
+      "PowerShell(npx vitest run test/server/billing.test.ts 2>&1)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000,3001 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop } catch {} }; Start-Sleep -Milliseconds 500; \"freed\")",
+      "PowerShell(npx vitest run 2>&1)",
+      "Bash(curl -s -X POST https://api.runware.ai/v1 -H 'Content-Type: application/json' -H 'Authorization: Bearer xGR0pQN1Zvz2iDiSmQ6iTGwGxOONus3m' -d '[{\"taskType\":\"imageInference\",\"taskUUID\":\"a4444444-0000-4000-8000-000000000004\",\"model\":\"runware:400@5\",\"positivePrompt\":\"restore and colorize this old photo, natural skin tones\",\"width\":2048,\"height\":2048,\"steps\":28,\"CFGScale\":3.5,\"acceleration\":\"high\",\"numberResults\":1,\"referenceImages\":[\"https://im.runware.ai/image/os/a06dlim3/ws/3/ii/f645d0ee-adb9-41aa-ac46-cf9b216b9091.jpg\"],\"outputType\":\"URL\",\"outputFormat\":\"JPG\",\"deliveryMethod\":\"sync\"}]')",
+      "Bash(curl -s -X POST https://api.runware.ai/v1 -H 'Content-Type: application/json' -H 'Authorization: Bearer __TRACKED_VAR__' -d '[{\"taskType\":\"imageInference\",\"taskUUID\":\"c0000000-0000-4000-8000-0000000000aa\",\"model\":\"google:4@1\",\"positivePrompt\":\"a breathtaking misty mountain valley landscape, cinematic\",\"width\":1024,\"height\":1024,\"numberResults\":1,\"outputType\":\"URL\",\"outputFormat\":\"JPG\",\"outputQuality\":90,\"deliveryMethod\":\"sync\",\"providerSettings\":{\"google\":{\"safetyTolerance\":\"none\"}}}]')",
+      "Bash(curl -s http://localhost:3000/api/tools)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3000/)",
+      "PowerShell(npm run build 2>&1)"
     ],
     "additionalDirectories": [
       "e:\\Ai-prompt\\.next\\dev\\cache\\turbopack",
       "e:\\ai-prompt-old\\aiprompt\\src\\app\\filters",
       "e:\\ai-prompt-old\\aiprompt\\src\\data\\mock",
       "e:\\ai-prompt-old\\aiprompt",
-      "E:\\ai-prompt-old\\aiprompt\\src\\app\\api\\placeholder\\[...params]"
+      "E:\\ai-prompt-old\\aiprompt\\src\\app\\api\\placeholder\\[...params]",
+      "\\tmp"
     ]
   }
 }

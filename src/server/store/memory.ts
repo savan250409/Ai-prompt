@@ -95,6 +95,11 @@ const coins: CoinStore = {
       .slice(0, limit)
       .map(({ userId: _u, ...t }) => t);
   },
+  async existsByReference(referenceType, referenceId) {
+    return data.ledger.some(
+      (e) => e.referenceType === referenceType && e.referenceId === referenceId,
+    );
+  },
   async record({ userId, delta, reason, referenceType = null, referenceId = null }) {
     data.ledger.push({ userId, delta, reason, referenceType, referenceId, createdAt: new Date() });
     return coins.balance(userId);
@@ -117,9 +122,14 @@ const coins: CoinStore = {
 const subscriptions: SubscriptionStore = {
   async activeFor(userId) {
     const now = Date.now();
+    // A cancelled sub keeps Pro until the paid period ends — so both "active"
+    // and not-yet-expired "cancelled" count as currently subscribed.
     return (
       data.subscriptions.find(
-        (s) => s.userId === userId && s.status === "active" && s.currentPeriodEnd.getTime() > now,
+        (s) =>
+          s.userId === userId &&
+          (s.status === "active" || s.status === "cancelled") &&
+          s.currentPeriodEnd.getTime() > now,
       ) ?? null
     );
   },
@@ -129,10 +139,48 @@ const subscriptions: SubscriptionStore = {
   async existsByProviderId(providerSubscriptionId) {
     return data.subscriptions.some((s) => s.providerSubscriptionId === providerSubscriptionId);
   },
-  async activate({ userId, plan, providerSubscriptionId = null, periodStart, periodEnd }) {
-    // expire any prior active sub for this user
+  async cancel(userId) {
+    const now = Date.now();
     for (const s of data.subscriptions) {
-      if (s.userId === userId && s.status === "active") s.status = "expired";
+      if (s.userId === userId && s.status === "active" && s.currentPeriodEnd.getTime() > now) {
+        s.status = "cancelled";
+      }
+    }
+    return subscriptions.activeFor(userId);
+  },
+  async markCharged({ userId, plan, providerSubscriptionId, periodEnd }) {
+    const existing = data.subscriptions.find(
+      (s) => s.providerSubscriptionId === providerSubscriptionId,
+    );
+    if (existing) {
+      existing.status = "active";
+      existing.plan = plan;
+      existing.currentPeriodEnd = periodEnd;
+      return existing;
+    }
+    for (const s of data.subscriptions) {
+      if (s.userId === userId && (s.status === "active" || s.status === "cancelled")) {
+        s.status = "expired";
+      }
+    }
+    const sub: StoredSubscription = {
+      id: id(),
+      userId,
+      plan,
+      status: "active",
+      providerSubscriptionId,
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: periodEnd,
+    };
+    data.subscriptions.push(sub);
+    return sub;
+  },
+  async activate({ userId, plan, providerSubscriptionId = null, periodStart, periodEnd }) {
+    // expire any prior active/cancelled sub for this user
+    for (const s of data.subscriptions) {
+      if (s.userId === userId && (s.status === "active" || s.status === "cancelled")) {
+        s.status = "expired";
+      }
     }
     const sub: StoredSubscription = {
       id: id(),
@@ -243,6 +291,15 @@ const generations: GenerationStore = {
     return [...data.generations.values()]
       .filter((g) => g.userId === userId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  },
+  async countDoneToolSince(userId, toolKey, since) {
+    return [...data.generations.values()].filter(
+      (g) =>
+        g.userId === userId &&
+        g.toolKey === toolKey &&
+        g.status === "done" &&
+        g.createdAt >= since,
+    ).length;
   },
 };
 

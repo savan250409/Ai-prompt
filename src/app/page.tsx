@@ -3,17 +3,17 @@ import { Container } from "@/components/layout/container";
 import { MosaicHero } from "@/components/catalog/mosaic-hero";
 import { Rail } from "@/components/catalog/rail";
 import { PromptCard } from "@/components/catalog/prompt-card";
-import { CategoryCard } from "@/components/catalog/category-card";
+import { FilterCard } from "@/components/catalog/filter-card";
 import { SectionHeader } from "@/components/catalog/section-header";
 import { ProSpotlight } from "@/components/catalog/pro-spotlight";
 import { Reveal } from "@/components/ui/reveal";
 
 export default async function HomePage() {
-  const [mosaic, videos, images, filterCats] = await Promise.all([
+  const [mosaic, videos, images, filters] = await Promise.all([
     catalog.mosaic(),
     catalog.featuredVideos(),
     catalog.featuredImages(),
-    catalog.filterCategories(),
+    catalog.filters(),
   ]);
 
   return (
@@ -62,16 +62,11 @@ export default async function HomePage() {
               subtitle="Turn any photo into a style"
               seeAllHref="/filters"
             />
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {filterCats.slice(0, 3).map((c, i) => (
-                <CategoryCard
-                  key={c.id}
-                  category={c}
-                  href={`/filters?category=${c.id}`}
-                  priority={i === 0}
-                />
+            <Rail>
+              {filters.slice(0, 12).map((f, i) => (
+                <FilterCard key={f.id} filter={f} priority={i < 4} />
               ))}
-            </div>
+            </Rail>
           </section>
         </Reveal>
       </Container>

@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Download, ImageOff, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buttonClass } from "@/components/ui/button-variants";
+import { downloadHref } from "@/lib/utils";
 import type { GenResult, GenState } from "./use-generation";
 
 /** Generation result — resolves from a shimmer/de-noise pass (§11.5.4). */
@@ -63,7 +64,7 @@ export function SummonResult({
 
       {state === "done" && result && (
         <div className="flex flex-wrap items-center gap-2.5">
-          <a href={result.url} download className={buttonClass({ variant: "primary" })}>
+          <a href={downloadHref(result.url)} download className={buttonClass({ variant: "primary" })}>
             <Download className="h-4 w-4" />
             Download
           </a>

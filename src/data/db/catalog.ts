@@ -110,7 +110,7 @@ function fallbackTools(): Tool[] {
     name: t.name,
     description: t.description,
     beforeImage: null,
-    afterImage: null,
+    afterImage: t.image,
     coinCost: config.coinCost.tool,
     requiresPro: t.requiresPro,
     sortOrder: i,

@@ -34,7 +34,7 @@ export default function PrivacyPage() {
           </p>
           <h2>Payments</h2>
           <p>
-            Payments are handled by Cashfree. We never see or store your full card details.
+            Payments are handled by Razorpay. We never see or store your full card details.
           </p>
           <h2>Your choices</h2>
           <p>

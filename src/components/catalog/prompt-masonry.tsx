@@ -79,11 +79,9 @@ export function PromptMasonry({
 
   return (
     <>
-      <div className="columns-2 gap-4 sm:columns-3 lg:columns-4 [&>*]:mb-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item, i) => (
-          <div key={item.id} className="break-inside-avoid">
-            <PromptCard item={item} priority={i < 4} />
-          </div>
+          <PromptCard key={item.id} item={item} priority={i < 4} />
         ))}
       </div>
 

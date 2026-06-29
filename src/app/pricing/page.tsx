@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { PLANS, config } from "@/lib/config";
+import { PLANS, TOPUPS, config } from "@/lib/config";
 import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { PricingPlans } from "@/components/billing/pricing-plans";
+import { TopupCards } from "@/components/billing/topup-cards";
 
 export const metadata: Metadata = {
   title: "Go Pro",
@@ -19,6 +20,14 @@ export default function PricingPage() {
     badge: p.badge,
   }));
 
+  const topups = TOPUPS.map((t) => ({
+    id: t.id,
+    name: t.name,
+    priceInr: t.priceInr,
+    coins: t.coins,
+    badge: t.badge,
+  }));
+
   return (
     <>
       <PageHero
@@ -26,10 +35,15 @@ export default function PricingPage() {
         title="Go Pro"
         subtitle="Unlimited prompts, AI generation, and no ads. Cancel anytime."
       />
-      <Container className="py-12">
+      <Container className="space-y-14 py-12">
         <PricingPlans plans={plans} />
+
+        <div className="border-t border-hairline pt-12">
+          <TopupCards topups={topups} />
+        </div>
+
         {config.devBillingTestMode && (
-          <p className="mt-8 text-center text-caption text-low">
+          <p className="text-center text-caption text-low">
             Dev test-mode: purchases are simulated locally (Cashfree activates when keys are set).
           </p>
         )}

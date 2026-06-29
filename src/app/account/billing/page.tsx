@@ -7,6 +7,7 @@ import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { Breadcrumb } from "@/components/catalog/breadcrumb";
 import { buttonClass } from "@/components/ui/button-variants";
+import { CancelPlanButton } from "@/components/account/cancel-plan-button";
 import { cn, formatCoins } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Billing & Coins" };
@@ -22,6 +23,7 @@ export default async function BillingPage() {
 
   const REASON_LABEL: Record<string, string> = {
     subscription_grant: "Plan coins",
+    topup: "Coin top-up",
     generation_video: "Video generation",
     generation_image: "Image generation",
     filter: "Filter",
@@ -53,12 +55,29 @@ export default async function BillingPage() {
             {isPro && sub ? (
               <>
                 <p className="mt-2 text-sm capitalize text-hi">{sub.plan} plan</p>
-                <p className="text-caption text-mid">
-                  Renews {sub.currentPeriodEnd.toLocaleDateString("en-IN")}
-                </p>
-                <p className="mt-4 text-caption text-low">
-                  Manage or cancel your subscription anytime.
-                </p>
+                {sub.status === "cancelled" ? (
+                  <p className="text-caption text-mid">
+                    Cancelled · Pro until {sub.currentPeriodEnd.toLocaleDateString("en-IN")} ·
+                    won&rsquo;t renew
+                  </p>
+                ) : (
+                  <p className="text-caption text-mid">
+                    Renews {sub.currentPeriodEnd.toLocaleDateString("en-IN")}
+                  </p>
+                )}
+                {sub.status === "cancelled" ? (
+                  <p className="mt-4 text-caption text-low">
+                    Your plan won&rsquo;t renew. Re-subscribe anytime from{" "}
+                    <Link href="/pricing" className="text-cyan hover:underline">
+                      pricing
+                    </Link>
+                    .
+                  </p>
+                ) : (
+                  <CancelPlanButton
+                    activeUntil={sub.currentPeriodEnd.toLocaleDateString("en-IN")}
+                  />
+                )}
               </>
             ) : (
               <>

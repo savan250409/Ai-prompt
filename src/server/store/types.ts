@@ -36,6 +36,7 @@ export interface UserStore {
 
 export type CoinReason =
   | "subscription_grant"
+  | "topup"
   | "generation_video"
   | "generation_image"
   | "filter"
@@ -56,6 +57,8 @@ export interface CoinStore {
   balance(userId: string): Promise<number>;
   /** Recent ledger entries, newest first. */
   recent(userId: string, limit?: number): Promise<CoinTxn[]>;
+  /** True if a ledger entry already exists for this reference (idempotency). */
+  existsByReference(referenceType: string, referenceId: string): Promise<boolean>;
   /** Append a ledger entry; returns the new balance. */
   record(entry: {
     userId: string;
@@ -99,6 +102,24 @@ export interface SubscriptionStore {
     plan: SubPlan;
     providerSubscriptionId?: string | null;
     periodStart: Date;
+    periodEnd: Date;
+  }): Promise<StoredSubscription>;
+  /**
+   * Cancel the active subscription. It stays Pro until the end of the paid
+   * period (it just won't renew), so this returns the now-`cancelled` sub (or
+   * null if there was none).
+   */
+  cancel(userId: string): Promise<StoredSubscription | null>;
+  /**
+   * Record a recurring-subscription charge: upsert by `providerSubscriptionId`
+   * (the Razorpay sub id, constant across renewals) — extends the period on a
+   * renewal, or creates the row on the first charge. Used for Razorpay
+   * Subscriptions so each cycle keeps the user Pro.
+   */
+  markCharged(data: {
+    userId: string;
+    plan: SubPlan;
+    providerSubscriptionId: string;
     periodEnd: Date;
   }): Promise<StoredSubscription>;
 }
@@ -162,6 +183,9 @@ export interface GenerationStore {
   get(id: string): Promise<StoredGeneration | null>;
   findByProviderTaskId(providerTaskId: string): Promise<StoredGeneration | null>;
   listForUser(userId: string): Promise<StoredGeneration[]>;
+  /** Count this user's successful (`done`) generations for a tool since a time —
+   *  used to enforce the free per-tool daily limit (e.g. Enhancer 1/24h). */
+  countDoneToolSince(userId: string, toolKey: string, since: Date): Promise<number>;
 }
 
 export interface Store {

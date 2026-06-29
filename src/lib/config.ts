@@ -47,10 +47,10 @@ export const config = {
 
   // ---- coins (costs to spend) — §1.4 ------------------------------------
   coinCost: {
-    video: int(process.env.COIN_COST_VIDEO, 10),
-    image: int(process.env.COIN_COST_IMAGE, 5),
+    video: int(process.env.COIN_COST_VIDEO, 10), // base/fallback; video uses the matrix below
+    image: int(process.env.COIN_COST_IMAGE, 20),
     filter: int(process.env.COIN_COST_FILTER, 3),
-    tool: int(process.env.COIN_COST_TOOL, 3),
+    tool: int(process.env.COIN_COST_TOOL, 4),
   },
 
   // ---- plan coin grants — §1.4 ------------------------------------------
@@ -80,8 +80,8 @@ export const config = {
     wsUrl: process.env.RUNWARE_WS_URL ?? "wss://ws-api.runware.ai/v1",
     webhookSecret: process.env.RUNWARE_WEBHOOK_SECRET ?? "",
     model: {
-      image: process.env.RUNWARE_MODEL_IMAGE ?? "placeholder:image@1",
-      video: process.env.RUNWARE_MODEL_VIDEO ?? "placeholder:video@1",
+      image: process.env.RUNWARE_MODEL_IMAGE ?? "google:4@1",
+      video: process.env.RUNWARE_MODEL_VIDEO ?? "bytedance:2@2",
     },
     /** Use the real provider only when a key is present; else Mock. */
     get enabled() {
@@ -93,26 +93,29 @@ export const config = {
   // Kept as config so swapping in the real model needs no code change.
   video: {
     durations: [6, 12] as const,
-    resolutions: [480, 720] as const,
+    resolutions: [480, 720, 1080] as const,
     defaultDuration: int(process.env.VIDEO_DEFAULT_DURATION, 6),
     defaultResolution: int(process.env.VIDEO_DEFAULT_RESOLUTION, 480),
   },
 
-  // ---- Cashfree (payments, INR) — §1.6 ----------------------------------
-  cashfree: {
-    appId: process.env.CASHFREE_APP_ID ?? "",
-    secretKey: process.env.CASHFREE_SECRET_KEY ?? "",
-    env: (process.env.CASHFREE_ENV ?? "sandbox") === "production" ? "production" : "sandbox",
-    apiVersion: process.env.CASHFREE_API_VERSION ?? "2023-08-01",
-    /** Default phone for order creation (Cashfree requires one). */
-    defaultPhone: process.env.CASHFREE_DEFAULT_PHONE ?? "9999999999",
-    get baseUrl() {
-      return this.env === "production"
-        ? "https://api.cashfree.com/pg"
-        : "https://sandbox.cashfree.com/pg";
-    },
+  // ---- Razorpay (payments, INR) — §1.6 ----------------------------------
+  // key_id is public (used by the browser checkout); key_secret + webhook
+  // secret are server-only. Test keys (rzp_test_…) work with no extra setup.
+  razorpay: {
+    keyId: process.env.RAZORPAY_KEY_ID ?? "",
+    keySecret: process.env.RAZORPAY_KEY_SECRET ?? "",
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET ?? "",
+    apiBase: "https://api.razorpay.com/v1",
+    // Razorpay Subscription plan ids (plan_…) — created in the dashboard. When
+    // set, the matching plan checks out as a recurring subscription; top-ups
+    // are always one-time orders.
+    planId: {
+      weekly: process.env.RAZORPAY_PLAN_WEEKLY ?? "",
+      monthly: process.env.RAZORPAY_PLAN_MONTHLY ?? "",
+      yearly: process.env.RAZORPAY_PLAN_YEARLY ?? "",
+    } as Record<string, string>,
     get enabled() {
-      return Boolean(this.appId && this.secretKey);
+      return Boolean(this.keyId && this.keySecret);
     },
   },
 
@@ -123,7 +126,7 @@ export const config = {
   isProd: process.env.NODE_ENV === "production",
   /** Dev-only simulated purchase; force-disabled in production — §1.6. */
   get devBillingTestMode() {
-    return !this.isProd && !this.cashfree.enabled;
+    return !this.isProd && !this.razorpay.enabled;
   },
 } as const;
 
@@ -157,13 +160,59 @@ export const PLANS = [
 
 export type PlanId = (typeof PLANS)[number]["id"];
 
+/**
+ * One-time coin top-ups (no subscription, no Pro — just buy coins). Prices in
+ * INR rupees; env-overridable like the plans so the owner can re-tune (§1.4).
+ */
+export const TOPUPS = [
+  {
+    id: "starter" as const,
+    name: "Starter",
+    priceInr: int(process.env.TOPUP_PRICE_STARTER, 50),
+    coins: int(process.env.TOPUP_COINS_STARTER, 60),
+    badge: null as string | null,
+  },
+  {
+    id: "standard" as const,
+    name: "Standard",
+    priceInr: int(process.env.TOPUP_PRICE_STANDARD, 100),
+    coins: int(process.env.TOPUP_COINS_STANDARD, 130),
+    badge: null as string | null,
+  },
+  {
+    id: "value" as const,
+    name: "Best Value",
+    priceInr: int(process.env.TOPUP_PRICE_VALUE, 150),
+    coins: int(process.env.TOPUP_COINS_VALUE, 200),
+    badge: "BEST VALUE" as string | null,
+  },
+];
+
+export type TopupId = (typeof TOPUPS)[number]["id"];
+
+/**
+ * Video coin cost by resolution + duration (§1.4). Higher resolution and longer
+ * clips cost more. Used by BOTH the server (authoritative charge) and the client
+ * (live cost label as the user changes the toggles), so the two never disagree.
+ * Unknown combos fall back to the nearest defined row / the 5s price.
+ */
+export const VIDEO_COIN_COST: Record<number, Record<number, number>> = {
+  480: { 6: 40, 12: 60 },
+  720: { 6: 80, 12: 100 },
+  1080: { 6: 120, 12: 140 },
+};
+
+export function videoCoinCost(resolution: number, duration: number): number {
+  const byRes = VIDEO_COIN_COST[resolution] ?? VIDEO_COIN_COST[480];
+  return byRes[duration] ?? Object.values(byRes)[0];
+}
+
 /** Safe subset shipped to the browser (NO secrets). */
 export const publicConfig = {
   coinCost: config.coinCost,
   freeUnlocksPerDay: config.freeUnlocksPerDay,
   video: config.video,
   devBillingTestMode: config.devBillingTestMode,
-  cashfreeMode: config.cashfree.env, // public: the Cashfree JS SDK needs the mode (no secret)
 };
 
 export type PublicConfig = typeof publicConfig;

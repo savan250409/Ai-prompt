@@ -1,27 +1,37 @@
-import { activatePlan, isValidPlan, verifyWebhookSignature } from "@/server/billing";
+import {
+  chargeSubscription,
+  fetchOrderNotes,
+  fetchSubscriptionNotes,
+  grantTopup,
+  isValidPlan,
+  isValidTopup,
+  verifyWebhookSignature,
+} from "@/server/billing";
 import { ok, fail } from "@/lib/http";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Cashfree webhook (§7, §8). Signature = base64(HMAC-SHA256(timestamp + rawBody,
- * secretKey)), verified against the x-webhook-signature header. Activates the
- * plan + grants coins idempotently (by order_id). Server-to-server only.
+ * Razorpay webhook (§7) — the authoritative backup to the client verify call.
+ * Signature = HMAC-SHA256(rawBody, webhookSecret) hex, checked against the
+ * x-razorpay-signature header. Resolves the order's `notes` (userId + plan or
+ * topup) and fulfils idempotently by order id. Server-to-server only.
  */
 export async function POST(req: Request) {
   const raw = await req.text();
-  const signature = req.headers.get("x-webhook-signature") ?? "";
-  const timestamp = req.headers.get("x-webhook-timestamp") ?? "";
-
-  if (!verifyWebhookSignature(raw, timestamp, signature)) {
-    return fail(400, "Invalid signature");
-  }
+  const signature = req.headers.get("x-razorpay-signature") ?? "";
+  if (!verifyWebhookSignature(raw, signature)) return fail(400, "Invalid signature");
 
   let event: {
-    type?: string;
-    data?: {
-      order?: { order_id?: string; order_tags?: Record<string, string> | null };
-      payment?: { payment_status?: string };
+    event?: string;
+    payload?: {
+      payment?: {
+        entity?: { id?: string; order_id?: string; notes?: Record<string, string> | null };
+      };
+      order?: { entity?: { id?: string; notes?: Record<string, string> | null } };
+      subscription?: {
+        entity?: { id?: string; notes?: Record<string, string> | null };
+      };
     };
   };
   try {
@@ -30,18 +40,45 @@ export async function POST(req: Request) {
     return fail(400, "Invalid payload");
   }
 
-  const isSuccess =
-    event.type === "PAYMENT_SUCCESS_WEBHOOK" ||
-    event.data?.payment?.payment_status === "SUCCESS";
+  const type = event.event ?? "";
 
-  if (isSuccess) {
-    const order = event.data?.order;
-    const tags = order?.order_tags ?? {};
-    const userId = tags.userId;
-    const plan = tags.plan;
-    const providerId = order?.order_id ?? null;
-    if (userId && isValidPlan(plan)) {
-      await activatePlan(userId, plan, providerId, new Date());
+  // --- recurring subscription charge / activation (plans) ---
+  if (type.startsWith("subscription.")) {
+    const subId = event.payload?.subscription?.entity?.id ?? null;
+    const paymentId = event.payload?.payment?.entity?.id ?? null;
+    let notes = event.payload?.subscription?.entity?.notes ?? {};
+    if (subId && !notes?.userId) {
+      try {
+        notes = await fetchSubscriptionNotes(subId);
+      } catch {
+        /* leave notes as-is */
+      }
+    }
+    const userId = notes?.userId;
+    // A real charge has a payment id; "charged" is the one that grants coins.
+    if (userId && subId && paymentId && isValidPlan(notes.plan)) {
+      await chargeSubscription(userId, notes.plan, subId, paymentId, new Date());
+    }
+    return ok({ received: true });
+  }
+
+  // --- one-time order paid (top-ups) ---
+  const isPaid = type === "payment.captured" || type === "order.paid";
+  if (isPaid) {
+    const orderId =
+      event.payload?.order?.entity?.id ?? event.payload?.payment?.entity?.order_id ?? null;
+    let notes =
+      event.payload?.order?.entity?.notes ?? event.payload?.payment?.entity?.notes ?? {};
+    if (orderId && !notes?.userId) {
+      try {
+        notes = await fetchOrderNotes(orderId);
+      } catch {
+        /* leave notes as-is */
+      }
+    }
+    const userId = notes?.userId;
+    if (userId && orderId && isValidTopup(notes.topup)) {
+      await grantTopup(userId, notes.topup, orderId);
     }
   }
 

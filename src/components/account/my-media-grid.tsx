@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Clock, Download, ImageOff } from "lucide-react";
+import { downloadHref } from "@/lib/utils";
 import type { Generation } from "@/lib/types";
 
 /** Grid of past generations (§6 My Media). Polls while any item is processing. */
@@ -56,7 +57,7 @@ export function MyMediaGrid({ items }: { items: Generation[] }) {
           )}
           {g.status === "done" && g.outputMediaPath && (
             <a
-              href={g.outputMediaPath}
+              href={downloadHref(g.outputMediaPath)}
               download
               className="glass absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-pill text-hi opacity-0 transition-opacity group-hover:opacity-100"
               aria-label="Download"

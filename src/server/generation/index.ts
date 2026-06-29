@@ -1,5 +1,5 @@
 import "server-only";
-import { config } from "@/lib/config";
+import { config, videoCoinCost } from "@/lib/config";
 import { store } from "@/server/store";
 import type { CoinReason, StoredGeneration } from "@/server/store/types";
 import { getViewer } from "@/server/entitlements";
@@ -53,6 +53,8 @@ export interface RunInput {
   duration?: number;
   resolution?: number;
   aspect?: string;
+  /** Tool payment for FREE users: "ad" = watch ad (free), "coins" = pay coins. */
+  method?: "ad" | "coins";
 }
 
 export type RunResult =
@@ -110,20 +112,35 @@ export async function runGeneration(input: RunInput): Promise<RunResult> {
 
   // Pro unlocks all aspect ratios; otherwise square only (§6).
   const aspect = viewer.isPro ? (input.aspect ?? "1:1") : "1:1";
-  const toggles = input.kind === "video" ? mapVideoToggles(input.duration, input.resolution) : {};
+  const videoToggles =
+    input.kind === "video" ? mapVideoToggles(input.duration, input.resolution) : null;
+  const toggles = videoToggles ?? {};
 
-  const cost = COST[input.kind];
+  // Pricing (§1.4):
+  //  • video → scales with resolution + duration
+  //  • tools → Pro pays coins; a FREE user pays coins OR watches an ad (free)
+  //  • image / filter → flat coin cost
+  let cost: number;
+  if (videoToggles) {
+    cost = videoCoinCost(videoToggles.resolution, videoToggles.duration);
+  } else if (input.kind === "tool") {
+    cost = viewer.isPro || input.method === "coins" ? COST.tool : 0;
+  } else {
+    cost = COST[input.kind];
+  }
 
-  // Atomic spend (§1.4).
-  const balance = await store.coins.spend({
-    userId: viewer.userId,
-    amount: cost,
-    reason: coinReason(input.kind),
-    referenceType: input.kind,
-    referenceId: input.sourceItemId ?? input.toolKey ?? null,
-  });
-  if (balance == null) {
-    return { ok: false, status: 402, error: "Not enough coins. Go Pro for more." };
+  // Atomic spend (only when there's a cost; free tool runs skip the ledger).
+  if (cost > 0) {
+    const balance = await store.coins.spend({
+      userId: viewer.userId,
+      amount: cost,
+      reason: coinReason(input.kind),
+      referenceType: input.kind,
+      referenceId: input.sourceItemId ?? input.toolKey ?? null,
+    });
+    if (balance == null) {
+      return { ok: false, status: 402, error: "Not enough coins. Go Pro for more." };
+    }
   }
 
   const gen = await store.generations.create({
@@ -155,9 +172,9 @@ export async function runGeneration(input: RunInput): Promise<RunResult> {
   }
 
   if (outcome.status === "failed") {
-    await refund(viewer.userId, cost, gen.id);
+    if (cost > 0) await refund(viewer.userId, cost, gen.id);
     await store.generations.update(gen.id, { status: "failed" });
-    return { ok: false, status: 502, error: outcome.error ?? "Generation failed. Coins refunded." };
+    return { ok: false, status: 502, error: outcome.error ?? "Generation failed." };
   }
 
   if (outcome.status === "processing") {

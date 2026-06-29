@@ -83,6 +83,10 @@ export interface Me {
     phone: string | null;
   } | null;
   isPro: boolean;
+  /** Current subscription plan id (weekly/monthly/yearly), or null if free. */
+  plan: string | null;
+  /** Subscription state: "active", "cancelled" (Pro until period end), or null. */
+  planStatus: "active" | "cancelled" | null;
   coins: number;
   freeUnlocksRemaining: number;
 }

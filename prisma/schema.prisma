@@ -221,6 +221,7 @@ model Subscription {
 
 enum CoinReason {
   subscription_grant
+  topup
   generation_video
   generation_image
   filter

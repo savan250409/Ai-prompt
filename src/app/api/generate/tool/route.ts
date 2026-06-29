@@ -19,6 +19,8 @@ export async function POST(req: Request) {
     toolKey?: string;
     prompt?: string;
     image?: string;
+    aspect?: string;
+    method?: "ad" | "coins";
   } | null;
 
   const toolKey = body?.toolKey as ToolKey | undefined;
@@ -31,6 +33,8 @@ export async function POST(req: Request) {
     toolKey,
     prompt: body?.prompt,
     sourceImage: upload.value,
+    aspect: body?.aspect,
+    method: body?.method === "coins" ? "coins" : "ad",
   });
   if (!result.ok) return fail(result.status, result.error);
   return ok(result);

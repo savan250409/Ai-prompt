@@ -8,6 +8,7 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as {
     filterId?: string;
     image?: string;
+    aspect?: string;
   } | null;
 
   if (!body?.filterId) return fail(400, "Missing filter");
@@ -19,6 +20,7 @@ export async function POST(req: Request) {
     sourceItemType: null,
     sourceItemId: body.filterId,
     sourceImage: upload.value,
+    aspect: body.aspect,
   });
   if (!result.ok) return fail(result.status, result.error);
   return ok(result);

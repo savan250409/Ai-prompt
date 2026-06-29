@@ -8,6 +8,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Build an href that triggers a real file download. The browser's `download`
+ * attribute is IGNORED for cross-origin URLs (e.g. generated media on
+ * im.runware.ai), so for absolute http(s) URLs we route through a same-origin
+ * proxy that sets `Content-Disposition: attachment`. Same-origin / inline URLs
+ * already download fine, so they pass through untouched.
+ */
+export function downloadHref(url?: string | null): string {
+  if (!url) return "#";
+  if (/^https?:\/\//i.test(url)) return `/api/download?url=${encodeURIComponent(url)}`;
+  return url; // relative (/api/media/...), data: or blob: — download works as-is
+}
+
+/**
  * Resolve a catalog `*_path` / `*_image` column to an absolute URL — §1.7.
  * - absolute URLs (http/https/data) pass through untouched
  * - relative paths are joined onto MEDIA_BASE_URL

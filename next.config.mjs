@@ -26,6 +26,9 @@ const nextConfig = {
     remotePatterns: [
       // live upstream catalog API media (aivibecode)
       { protocol: "https", hostname: "aiphotomaker.aivibecode.in" },
+      // Runware generated output (im = images, vm = videos)
+      { protocol: "https", hostname: "im.runware.ai" },
+      { protocol: "https", hostname: "vm.runware.ai" },
       // mock/seed real photos (picsum is network-blocked here; loremflickr works)
       { protocol: "https", hostname: "loremflickr.com" },
       { protocol: "https", hostname: "*.staticflickr.com" },

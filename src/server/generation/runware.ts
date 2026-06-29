@@ -40,18 +40,59 @@ async function post(tasks: object[]): Promise<RunwareResponse> {
   return json;
 }
 
+// Supported aspect ratios → pixel dimensions for google:4@1 (Imagen).
+const ASPECT_WH: Record<string, [number, number]> = {
+  "9:16": [768, 1344],
+  "1:1": [1024, 1024],
+  "3:2": [1248, 832],
+  "2:3": [832, 1248],
+  "4:3": [1184, 864],
+  "3:4": [864, 1184],
+  "4:5": [896, 1152],
+  "5:4": [1152, 896],
+  "16:9": [1344, 768],
+  "21:9": [1536, 672],
+};
+
 function aspectToWH(aspect?: string): [number, number] {
-  switch (aspect) {
-    case "3:4":
-      return [768, 1024];
-    case "4:3":
-      return [1024, 768];
-    case "16:9":
-      return [1024, 576];
-    case "9:16":
-      return [576, 1024];
-    default:
-      return [1024, 1024];
+  return ASPECT_WH[aspect ?? "1:1"] ?? ASPECT_WH["1:1"];
+}
+
+// A real Runware AIR id looks like `google:4@1` / `runware:100@1`. The catalog's
+// ai_model is free-form text, so only let it override the configured model when
+// it's actually an AIR id — otherwise always use the configured default.
+const AIR_RE = /^[\w.-]+:\d+@\d+$/;
+
+// Google Imagen models accept a safety tolerance; "none" disables filtering.
+function providerSettings(model: string): Record<string, unknown> {
+  if (model.startsWith("google:")) {
+    return { providerSettings: { google: { safetyTolerance: "none" } } };
+  }
+  return {};
+}
+
+// How a model accepts a source/reference photo differs by family:
+//  - Google Imagen (google:*) rejects `seedImage`/`strength`, but supports
+//    `referenceImages: [...]` (used to preserve a face/subject from the upload).
+//  - FLUX/SD models use the classic img2img pair `seedImage` + `strength`.
+// Attaching the upload the wrong way is rejected by the API (the 502 you saw),
+// so we branch on the model.
+function usesReferenceImages(model: string): boolean {
+  return model.startsWith("google:");
+}
+
+// Attach the uploaded photo to the task in the form the selected model accepts.
+function attachSourceImage(
+  task: Record<string, unknown>,
+  model: string,
+  sourceImage: string,
+  strength?: number,
+) {
+  if (usesReferenceImages(model)) {
+    task.referenceImages = [sourceImage]; // accepts URL, data URI, base64, or UUID
+  } else {
+    task.seedImage = sourceImage;
+    task.strength = strength ?? 0.7;
   }
 }
 
@@ -64,26 +105,112 @@ function firstUrl(json: RunwareResponse): string | undefined {
   return str(item.imageURL) ?? str(item.videoURL) ?? str(item.outputURL);
 }
 
-const imageModel = (req: GenRequest) => req.model || config.runware.model.image;
-const videoModel = (req: GenRequest) => req.model || config.runware.model.video;
+const imageModel = (req: GenRequest) =>
+  req.model && AIR_RE.test(req.model) ? req.model : config.runware.model.image;
+const videoModel = (req: GenRequest) =>
+  req.model && AIR_RE.test(req.model) ? req.model : config.runware.model.video;
 
 function imageInferenceTask(req: GenRequest, prompt: string, strength?: number) {
   const [width, height] = aspectToWH(req.aspect);
+  const model = imageModel(req);
   const task: Record<string, unknown> = {
     taskType: "imageInference",
     taskUUID: uuid(),
-    outputType: "URL",
-    deliveryMethod: "sync",
-    model: imageModel(req),
+    model,
     positivePrompt: prompt || "a high quality photo",
     width,
     height,
     numberResults: 1,
+    includeCost: false,
+    outputType: "URL",
+    outputFormat: "JPG",
+    outputQuality: 95,
+    deliveryMethod: "sync",
+    ...providerSettings(model),
   };
   if (req.sourceImage) {
-    task.seedImage = req.sourceImage; // accepts URL, data URI, base64, or UUID
-    task.strength = strength ?? 0.7;
+    attachSourceImage(task, model, req.sourceImage, strength);
   }
+  return task;
+}
+
+// Models for the AI Tools (verified against the live API).
+const TOOL_MODEL = { inference: "runware:400@5", upscale: "runware:504@1", bgRemove: "runware:112@5" };
+
+// Fixed prompts for the upload-only tools (the user gives a photo, not text).
+const RETOUCH_PROMPT = `Professional photo retouching and enhancement.
+
+SUBJECT & COMPOSITION
+- Preserve original subject, identity, and composition
+- Fix closed or half-open eyes to look naturally open
+- Adjust hair covering face to reveal facial features clearly
+- Enhance facial details while maintaining a natural, realistic look
+
+SKIN & IMPERFECTIONS
+- Remove blemishes, spots, and imperfections naturally
+- Smooth crumpled, folded, or creased areas of the photo
+- Repair scratches and scan artifacts from physical damage
+
+LIGHTING & COLOR
+- Correct exposure if image is too dark or too bright
+- Balance colors, contrast, and white balance
+- Recover hidden details and improve subject visibility
+
+TECHNICAL
+- Reduce noise, blur, and compression artifacts
+- Improve sharpness, textures, and fine details
+
+natural skin tones, photorealistic result
+cinematic lighting, ultra sharp focus
+high dynamic range, 8k resolution, high quality`;
+
+const OLD_TO_NEW_PROMPT = `Professional black-and-white photo colorization.
+
+COLORIZATION
+- Convert grayscale photo into a naturally colored image
+- Apply realistic, historically accurate colors
+- Restore natural skin tones, hair colors, and eye colors
+- Add lifelike colors to clothing, objects, and environment
+
+DETAIL & STRUCTURE
+- Preserve original composition, identity, and facial structure
+- Recover fine textures and details from the source image
+
+LIGHTING & FINISH
+- Enhance brightness, contrast, and lighting for visual clarity
+- Apply balanced color grading with natural shadows and highlights
+
+natural skin tones, photorealistic result
+cinematic lighting, ultra sharp focus
+high dynamic range, 8k resolution, high quality`;
+
+// imageInference for the tools — runware:400@5 at the chosen aspect ratio,
+// 28 steps, CFGScale 3.5, acceleration high. Text-to-image when no photo;
+// image-to-image (referenceImages) when a photo is uploaded.
+function toolInferenceTask(
+  prompt: string,
+  aspect?: string,
+  sourceImage?: string,
+): Record<string, unknown> {
+  const [width, height] = aspectToWH(aspect);
+  const task: Record<string, unknown> = {
+    taskType: "imageInference",
+    taskUUID: uuid(),
+    model: TOOL_MODEL.inference,
+    positivePrompt: prompt || "a high quality photo",
+    width,
+    height,
+    steps: 28,
+    CFGScale: 3.5,
+    acceleration: "high",
+    numberResults: 1,
+    includeCost: false,
+    outputType: "URL",
+    outputFormat: "JPG",
+    outputQuality: 95,
+    deliveryMethod: "sync",
+  };
+  if (sourceImage) task.referenceImages = [sourceImage];
   return task;
 }
 
@@ -91,51 +218,92 @@ function toolTask(req: GenRequest): Record<string, unknown> {
   const key = req.toolKey as ToolKey;
   switch (key) {
     case "image_generation":
-      return imageInferenceTask(req, req.prompt ?? "");
+      // text-to-image from the prompt
+      return toolInferenceTask(req.prompt ?? "", req.aspect);
     case "image_enhancer":
       return {
-        taskType: "imageUpscale",
+        taskType: "upscale",
         taskUUID: uuid(),
-        outputType: "URL",
-        deliveryMethod: "sync",
+        model: TOOL_MODEL.upscale,
         inputImage: req.sourceImage,
-        upscaleFactor: 4,
+        includeCost: false,
+        outputType: "URL",
+        outputFormat: "JPG",
+        outputQuality: 95,
+        deliveryMethod: "sync",
       };
     case "bg_remover":
       return {
-        taskType: "imageBackgroundRemoval",
+        taskType: "removeBackground",
         taskUUID: uuid(),
-        outputType: "URL",
-        deliveryMethod: "sync",
+        model: TOOL_MODEL.bgRemove,
         inputImage: req.sourceImage,
+        includeCost: false,
+        outputType: "URL",
+        outputFormat: "PNG", // PNG keeps the transparent background
+        outputQuality: 95,
+        deliveryMethod: "sync",
       };
     case "bg_changer":
-      // removal + composite of a new background from the prompt (img2img/inpaint)
-      return imageInferenceTask(req, req.prompt ?? "a new background", 0.6);
+      return toolInferenceTask(req.prompt ?? "place the subject in a new background scene", req.aspect, req.sourceImage);
     case "retouch":
-      return imageInferenceTask(req, req.prompt ?? "subtle natural retouch", 0.35);
+      // fixed retouch prompt — the user only uploads a photo
+      return toolInferenceTask(RETOUCH_PROMPT, req.aspect, req.sourceImage);
     case "old_to_new":
-      return imageInferenceTask(req, req.prompt ?? "restore and modernize this photo", 0.4);
+      // fixed colorization prompt — the user only uploads a photo
+      return toolInferenceTask(OLD_TO_NEW_PROMPT, req.aspect, req.sourceImage);
     default:
-      return imageInferenceTask(req, req.prompt ?? "");
+      return toolInferenceTask(req.prompt ?? "", req.aspect);
   }
+}
+
+// Video resolution → portrait pixel dimensions for bytedance:2@2 (verified
+// against the live API). The model accepts a fixed set, so unknown values snap
+// to 480p.
+const VIDEO_WH: Record<number, [number, number]> = {
+  480: [480, 864],
+  720: [704, 1248],
+  1080: [1088, 1920],
+};
+function videoResolutionToWH(res?: number): [number, number] {
+  return VIDEO_WH[res ?? 480] ?? VIDEO_WH[480];
+}
+
+// bytedance (Seedance) accepts a cameraFixed toggle.
+function videoProviderSettings(model: string): Record<string, unknown> {
+  if (model.startsWith("bytedance:")) {
+    return { providerSettings: { bytedance: { cameraFixed: false } } };
+  }
+  return {};
 }
 
 export const runwareProvider: GenerationProvider = {
   async start(req: GenRequest): Promise<GenOutcome> {
     try {
       if (req.kind === "video") {
+        const model = videoModel(req);
+        const [width, height] = videoResolutionToWH(req.resolution);
         const task: Record<string, unknown> = {
           taskType: "videoInference",
           taskUUID: uuid(),
-          outputType: "URL",
-          deliveryMethod: "async",
-          model: videoModel(req),
+          model,
           positivePrompt: req.prompt ?? "",
-          duration: req.duration,
-          width: req.resolution === 720 ? 1280 : 854,
-          height: req.resolution === 720 ? 720 : 480,
-          ...(req.sourceImage ? { seedImage: req.sourceImage } : {}),
+          width,
+          height,
+          duration: req.duration ?? config.video.defaultDuration,
+          numberResults: 1,
+          includeCost: false,
+          outputType: "URL",
+          outputFormat: "MP4",
+          outputQuality: 95,
+          deliveryMethod: "async",
+          ...videoProviderSettings(model),
+          // image-to-video: bytedance uses `frameImages`; other models seedImage
+          ...(req.sourceImage
+            ? model.startsWith("bytedance:")
+              ? { frameImages: [req.sourceImage] }
+              : { seedImage: req.sourceImage }
+            : {}),
           ...(config.runware.webhookSecret
             ? { webhookURL: `${process.env.NEXTAUTH_URL ?? ""}/api/generate/webhook` }
             : {}),
@@ -147,7 +315,9 @@ export const runwareProvider: GenerationProvider = {
 
       let task: Record<string, unknown>;
       if (req.kind === "filter") {
-        task = imageInferenceTask(req, req.prompt ?? "", 0.75); // identity-preserving
+        // FLUX (runware:400@5) — applies the style to the uploaded photo via
+        // referenceImages. Avoids Imagen's content moderation rejecting photos.
+        task = toolInferenceTask(req.prompt ?? "", req.aspect, req.sourceImage);
       } else if (req.kind === "tool") {
         task = toolTask(req);
       } else {

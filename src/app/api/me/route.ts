@@ -12,34 +12,27 @@ export async function GET() {
   const session = await auth();
   const userId = session?.user?.id ?? null;
 
-  if (!userId) {
-    const guest: Me = {
-      authenticated: false,
-      user: null,
-      isPro: false,
-      coins: 0,
-      freeUnlocksRemaining: config.freeUnlocksPerDay,
-    };
-    return ok(guest);
-  }
+  const guest: Me = {
+    authenticated: false,
+    user: null,
+    isPro: false,
+    plan: null,
+    planStatus: null,
+    coins: 0,
+    freeUnlocksRemaining: config.freeUnlocksPerDay,
+  };
+
+  if (!userId) return ok(guest);
 
   const user = await store.users.findById(userId);
-  if (!user) {
-    const guest: Me = {
-      authenticated: false,
-      user: null,
-      isPro: false,
-      coins: 0,
-      freeUnlocksRemaining: config.freeUnlocksPerDay,
-    };
-    return ok(guest);
-  }
+  if (!user) return ok(guest);
 
-  const [isPro, coins, adUnlocks] = await Promise.all([
-    store.subscriptions.isPro(userId),
+  const [sub, coins, adUnlocks] = await Promise.all([
+    store.subscriptions.activeFor(userId),
     store.coins.balance(userId),
     store.unlocks.adUnlocksSince(userId, startOfTodayUTC()),
   ]);
+  const isPro = sub !== null;
 
   const me: Me = {
     authenticated: true,
@@ -51,6 +44,8 @@ export async function GET() {
       phone: user.phone,
     },
     isPro,
+    plan: sub?.plan ?? null,
+    planStatus: sub?.status === "cancelled" ? "cancelled" : isPro ? "active" : null,
     coins,
     freeUnlocksRemaining: isPro
       ? config.freeUnlocksPerDay
