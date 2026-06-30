@@ -6,13 +6,13 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
-/** Persistent nav — Home first, then Images · Videos · AI Tools · AI Filter (§5). */
+/** Persistent nav — Home first, then Images · Videos · AI Tools · AI Filters (§5). */
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Home", icon: Home },
   { href: "/images", label: "Images", icon: ImageIcon },
   { href: "/videos", label: "Videos", icon: Clapperboard },
   { href: "/tools", label: "AI Tools", icon: Wand2 },
-  { href: "/filters", label: "AI Filter", icon: Palette },
+  { href: "/filters", label: "AI Filters", icon: Palette },
 ];
 
 export function isActivePath(pathname: string, href: string): boolean {

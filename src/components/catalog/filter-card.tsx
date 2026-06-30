@@ -11,7 +11,8 @@ export function FilterCard({ filter, priority }: { filter: FilterItem; priority?
       {filter.image && (
         <SmoothImage
           src={filter.image}
-          alt={filter.name}
+          // decorative: the visible <h3> below already names the card (§audit 13)
+          alt=""
           fill
           sizes="(max-width: 768px) 33vw, 16vw"
           priority={priority}

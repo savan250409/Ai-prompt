@@ -27,7 +27,8 @@ export function CategoryCard({
       {category.image && (
         <SmoothImage
           src={category.image}
-          alt={category.name}
+          // decorative: the visible <h3> below already names the card (§audit 13)
+          alt=""
           fill
           sizes="(max-width: 768px) 50vw, 25vw"
           priority={priority}

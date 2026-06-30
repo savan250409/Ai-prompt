@@ -1,14 +1,16 @@
-import type { Metadata } from "next";
 import { PLANS, TOPUPS, config } from "@/lib/config";
 import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { PricingPlans } from "@/components/billing/pricing-plans";
 import { TopupCards } from "@/components/billing/topup-cards";
+import { JsonLd } from "@/components/seo/json-ld";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Go Pro",
   description: "Unlock unlimited prompts, AI generation and no ads. Weekly, monthly or yearly.",
-};
+  path: "/pricing",
+});
 
 export default function PricingPage() {
   const plans = PLANS.map((p) => ({
@@ -30,6 +32,24 @@ export default function PricingPage() {
 
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: "Prompt Studio Pro",
+          description:
+            "Unlimited prompt unlocks, AI image & video generation, all aspect ratios, and no ads.",
+          brand: { "@type": "Brand", name: "Prompt Studio" },
+          offers: plans.map((p) => ({
+            "@type": "Offer",
+            name: `${p.name} plan`,
+            price: p.priceInr,
+            priceCurrency: "INR",
+            availability: "https://schema.org/InStock",
+            category: "Subscription",
+          })),
+        }}
+      />
       <PageHero
         eyebrow="Pricing"
         title="Go Pro"

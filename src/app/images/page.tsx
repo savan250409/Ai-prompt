@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
 import { catalog } from "@/data/catalog";
 import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { CategoryGrid } from "@/components/catalog/category-grid";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "AI Photo Prompts",
   description: "Browse editorial AI photo prompt categories. Unlock, copy, and generate stills.",
-};
+  path: "/images",
+});
 
 export default async function ImagesPage() {
   const categories = await catalog.imageCategories();

@@ -122,6 +122,11 @@ export const config = {
   // ---- auth --------------------------------------------------------------
   googleEnabled: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
 
+  // ---- contact -----------------------------------------------------------
+  /** Public support address shown on /support — env-overridable; defaults to
+   *  the product domain (not the placeholder promptstudio.app) — §audit. */
+  supportEmail: process.env.SUPPORT_EMAIL ?? "support@aivibecode.in",
+
   // ---- environment flags -------------------------------------------------
   isProd: process.env.NODE_ENV === "production",
   /** Dev-only simulated purchase; force-disabled in production — §1.6. */
@@ -159,6 +164,21 @@ export const PLANS = [
 ];
 
 export type PlanId = (typeof PLANS)[number]["id"];
+
+/**
+ * True when this deployment should be hidden from search engines: an explicit
+ * SITE_NOINDEX=true, or a dev/staging/test host (e.g. dev-prompt.aivibecode.in).
+ * Prevents Google indexing a staging copy that competes with production (§audit 5).
+ */
+export function isNoindexHost(): boolean {
+  if (process.env.SITE_NOINDEX === "true") return true;
+  try {
+    const host = new URL(process.env.NEXTAUTH_URL ?? "").hostname;
+    return /^(dev|staging|stage|test|preview)[.-]/i.test(host);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * One-time coin top-ups (no subscription, no Pro — just buy coins). Prices in

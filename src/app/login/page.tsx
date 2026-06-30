@@ -1,10 +1,14 @@
-import type { Metadata } from "next";
 import { Suspense } from "react";
 import { config } from "@/lib/config";
 import { Logo } from "@/components/ui/logo";
 import { AuthForm } from "@/components/auth/auth-form";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Sign in" };
+export const metadata = pageMetadata({
+  title: "Sign in",
+  description: "Sign in or create a free Prompt Studio account to unlock and generate.",
+  path: "/login",
+});
 
 export default function LoginPage() {
   return (

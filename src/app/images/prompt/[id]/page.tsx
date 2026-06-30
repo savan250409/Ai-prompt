@@ -4,6 +4,7 @@ import { catalog } from "@/data/catalog";
 import { getViewer, isPromptUnlocked } from "@/server/entitlements";
 import { store } from "@/server/store";
 import { PromptDetailView } from "@/components/catalog/prompt-detail";
+import { promptMetadata } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -16,7 +17,7 @@ export async function generateMetadata({
   const { c } = await searchParams;
   const item = await catalog.imageDetail(id, false, c);
   if (!item) return { title: "Photo Prompt" };
-  return { title: item.hint ?? "Photo Prompt", description: item.promptPreview };
+  return promptMetadata(item, id);
 }
 
 export default async function ImagePromptPage({

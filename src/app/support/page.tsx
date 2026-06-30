@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
+import { config } from "@/lib/config";
 
 export const metadata: Metadata = { title: "Support" };
 
@@ -40,8 +41,8 @@ export default function SupportPage() {
         <div className="mt-8 rounded-card border border-hairline bg-surface-2/60 p-5 text-center">
           <p className="text-sm text-mid">
             Still need help? Email{" "}
-            <a href="mailto:support@promptstudio.app" className="font-medium text-cyan">
-              support@promptstudio.app
+            <a href={`mailto:${config.supportEmail}`} className="font-medium text-cyan">
+              {config.supportEmail}
             </a>{" "}
             or send us{" "}
             <Link href="/feedback" className="font-medium text-cyan">

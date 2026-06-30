@@ -14,7 +14,7 @@ export function Logo({ compact = false, className }: { compact?: boolean; classN
       </span>
       {!compact && (
         <span className="font-display text-lg font-semibold tracking-tight text-hi">
-          Prompt<span className="text-gradient-electric">Studio</span>
+          Prompt <span className="text-gradient-electric">Studio</span>
         </span>
       )}
     </Link>

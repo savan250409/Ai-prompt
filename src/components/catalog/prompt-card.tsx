@@ -63,6 +63,9 @@ export function PromptCard({
       href={href}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
+      // explicit name: the thumbnail is decorative (alt="") and the visible
+      // label can be empty, so the link needs its own discernible name (a11y).
+      aria-label={item.hint ?? (item.kind === "video" ? "AI video prompt" : "AI photo prompt")}
       className={cn(
         "group relative block overflow-hidden rounded-card border border-hairline bg-surface-2 shadow-card outline-none transition-all duration-base ease-out-expo hover:-translate-y-1.5 hover:shadow-card-hover focus-visible:-translate-y-1.5",
         item.exclusive && "ring-gold",
@@ -74,7 +77,8 @@ export function PromptCard({
       {item.thumbnail ? (
         <Image
           src={item.thumbnail}
-          alt={item.hint ?? "AI prompt preview"}
+          // decorative: the visible label below already names the card (§audit 13)
+          alt=""
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 22vw"
           priority={priority}

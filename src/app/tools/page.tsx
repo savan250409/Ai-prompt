@@ -1,15 +1,16 @@
-import type { Metadata } from "next";
 import { catalog } from "@/data/catalog";
 import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { ToolCard } from "@/components/catalog/tool-card";
 import { Reveal } from "@/components/ui/reveal";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "AI Tools",
   description:
     "AI Image Generation, Enhancer, BG Remover, BG Changer, Retouch, and Old-to-New restoration.",
-};
+  path: "/tools",
+});
 
 export default async function ToolsPage() {
   const tools = await catalog.tools();

@@ -12,8 +12,8 @@ export default function PrivacyPage() {
       <Container className="py-10">
         <Prose>
           <p>
-            <strong>Template notice:</strong> this is placeholder policy text. Replace it with your
-            reviewed privacy policy before launch.
+            This Privacy Policy explains what information Prompt Studio collects, how we use it, and
+            the choices you have. By using the service you agree to the practices described here.
           </p>
           <h2>What we collect</h2>
           <p>

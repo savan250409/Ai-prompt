@@ -14,9 +14,19 @@ import type {
 } from "@/lib/types";
 import { config } from "@/lib/config";
 import { hasDatabase } from "@/lib/prisma";
+import { cleanHint, cleanLabel } from "@/lib/labels";
 import { mock } from "./mock/catalog";
 import { dbCatalog } from "./db/catalog";
 import { apiCatalog } from "./api/catalog";
+
+// Sanitize upstream content text once, at the facade, so every consumer (cards,
+// breadcrumbs, page heroes, metadata, JSON-LD) gets corrected names and no
+// leaked template placeholders — §audit 9 & 16.
+const fixCategory = (c: Category): Category => ({ ...c, name: cleanLabel(c.name) ?? c.name });
+const fixFilter = (f: FilterItem): FilterItem => ({ ...f, name: cleanLabel(f.name) ?? f.name });
+const fixListItem = (p: PromptListItem): PromptListItem => ({ ...p, hint: cleanHint(p.hint) });
+const fixDetail = (p: PromptDetail | null): PromptDetail | null =>
+  p ? { ...p, hint: cleanHint(p.hint) } : null;
 
 // Async wrapper over the mock seed (matches dbCatalog's shape).
 const mockSource: typeof dbCatalog = {
@@ -47,37 +57,46 @@ const source: typeof dbCatalog = config.api.enabled
     : mockSource;
 
 export const catalog = {
-  videoCategories: (): Promise<Category[]> => source.videoCategories(),
-  imageCategories: (): Promise<Category[]> => source.imageCategories(),
-  filterCategories: (): Promise<Category[]> => source.filterCategories(),
+  videoCategories: (): Promise<Category[]> =>
+    source.videoCategories().then((cs) => cs.map(fixCategory)),
+  imageCategories: (): Promise<Category[]> =>
+    source.imageCategories().then((cs) => cs.map(fixCategory)),
+  filterCategories: (): Promise<Category[]> =>
+    source.filterCategories().then((cs) => cs.map(fixCategory)),
 
   videosByCategory: (
     categoryId: string,
     paging?: { skip?: number; take?: number },
-  ): Promise<PromptListItem[]> => source.videosByCategory(categoryId, paging),
+  ): Promise<PromptListItem[]> =>
+    source.videosByCategory(categoryId, paging).then((ps) => ps.map(fixListItem)),
   imagesByCategory: (
     categoryId: string,
     paging?: { skip?: number; take?: number },
-  ): Promise<PromptListItem[]> => source.imagesByCategory(categoryId, paging),
+  ): Promise<PromptListItem[]> =>
+    source.imagesByCategory(categoryId, paging).then((ps) => ps.map(fixListItem)),
 
   videoDetail: (id: string, unlocked: boolean, categoryId?: string): Promise<PromptDetail | null> =>
-    source.videoDetail(id, unlocked, categoryId),
+    source.videoDetail(id, unlocked, categoryId).then(fixDetail),
   imageDetail: (id: string, unlocked: boolean, categoryId?: string): Promise<PromptDetail | null> =>
-    source.imageDetail(id, unlocked, categoryId),
+    source.imageDetail(id, unlocked, categoryId).then(fixDetail),
 
   /** Server-only: full prompt text (used after an unlock is verified). */
   rawPrompt: (kind: "video" | "image", id: string, categoryId?: string): Promise<string | null> =>
     source.rawPrompt(kind, id, categoryId),
 
-  filters: (categoryId?: string): Promise<FilterItem[]> => source.filters(categoryId),
-  filterDetail: (id: string): Promise<FilterItem | null> => source.filterDetail(id),
+  filters: (categoryId?: string): Promise<FilterItem[]> =>
+    source.filters(categoryId).then((fs) => fs.map(fixFilter)),
+  filterDetail: (id: string): Promise<FilterItem | null> =>
+    source.filterDetail(id).then((f) => (f ? fixFilter(f) : null)),
   filterPrompt: (id: string): Promise<string | null> => source.filterPrompt(id),
 
   tools: (): Promise<Tool[]> => source.tools(),
   toolByKey: (key: string): Promise<Tool | null> => source.toolByKey(key),
 
-  featuredVideos: (): Promise<PromptListItem[]> => source.featuredVideos(),
-  featuredImages: (): Promise<PromptListItem[]> => source.featuredImages(),
+  featuredVideos: (): Promise<PromptListItem[]> =>
+    source.featuredVideos().then((ps) => ps.map(fixListItem)),
+  featuredImages: (): Promise<PromptListItem[]> =>
+    source.featuredImages().then((ps) => ps.map(fixListItem)),
   mosaic: (): Promise<string[]> => source.mosaic(),
 };
 

@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { catalog } from "@/data/catalog";
 import { Container } from "@/components/layout/container";
@@ -8,11 +7,13 @@ import { FilterCard } from "@/components/catalog/filter-card";
 import { ProgressiveGrid } from "@/components/catalog/progressive-grid";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "AI Filters",
   description: "Turn any photo into a style — Ghibli, Pixar 3D, Anime, Pop Art and more.",
-};
+  path: "/filters",
+});
 
 export default async function FiltersPage({
   searchParams,
@@ -24,6 +25,10 @@ export default async function FiltersPage({
     catalog.filterCategories(),
     catalog.filters(selected),
   ]);
+
+  // With only one (placeholder-looking) category, the tab row and per-category
+  // grouping are redundant — show a single flat grid instead (§audit 8).
+  const showCategories = cats.length > 1;
 
   const chip = (href: string, label: string, active: boolean) => (
     <Link
@@ -43,19 +48,20 @@ export default async function FiltersPage({
   return (
     <>
       <PageHero
-        eyebrow="AI Filter"
-        title="Filters"
+        title="AI Filters"
         subtitle="Upload a photo and reimagine it in any style in seconds."
       />
       <Container className="space-y-10 py-10">
-        <div className="flex flex-wrap gap-2">
-          {chip("/filters", "All", !selected)}
-          {cats.map((c) => chip(`/filters?category=${c.id}`, c.name, selected === c.id))}
-        </div>
+        {showCategories && (
+          <div className="flex flex-wrap gap-2">
+            {chip("/filters", "All", !selected)}
+            {cats.map((c) => chip(`/filters?category=${c.id}`, c.name, selected === c.id))}
+          </div>
+        )}
 
         {filters.length === 0 ? (
           <EmptyState title="No filters here yet" hint="More styles are on the way." />
-        ) : selected ? (
+        ) : selected || !showCategories ? (
           <ProgressiveGrid
             step={9}
             className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6"

@@ -6,6 +6,7 @@ import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { Breadcrumb } from "@/components/catalog/breadcrumb";
 import { FilterStudio } from "@/components/studio/filter-studio";
+import { pageMetadata } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -14,7 +15,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const filter = await catalog.filterDetail(id);
-  return { title: filter ? `${filter.name} filter` : "Filter" };
+  if (!filter) return { title: "Filter" };
+  return pageMetadata({
+    title: `${filter.name} filter`,
+    description: `Turn any photo into the ${filter.name} style — upload a photo and apply this AI filter in seconds.`,
+    path: `/filters/${id}`,
+  });
 }
 
 export default async function FilterDetailPage({ params }: { params: Promise<{ id: string }> }) {

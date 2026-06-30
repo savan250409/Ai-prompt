@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
 import { catalog } from "@/data/catalog";
 import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { CategoryGrid } from "@/components/catalog/category-grid";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "AI Video Prompts",
   description: "Browse cinematic AI video prompt categories. Unlock, copy, and generate motion.",
-};
+  path: "/videos",
+});
 
 export default async function VideosPage() {
   const categories = await catalog.videoCategories();

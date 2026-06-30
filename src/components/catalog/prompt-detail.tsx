@@ -1,6 +1,8 @@
 import { Clapperboard, ImageIcon, Layers } from "lucide-react";
 import type { PromptDetail, PromptListItem } from "@/lib/types";
 import { Container } from "@/components/layout/container";
+import { promptDisplayName, promptJsonLd, promptLede } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 import { Breadcrumb } from "./breadcrumb";
 import { PreviewStage } from "./preview-stage";
 import { PromptPanel } from "./prompt-panel";
@@ -27,15 +29,17 @@ export function PromptDetailView({
   favorited?: boolean;
 }) {
   const KindIcon = item.kind === "video" ? Clapperboard : ImageIcon;
+  const displayName = promptDisplayName(item, item.id);
 
   return (
     <>
+      <JsonLd data={promptJsonLd(item, item.id)} />
       <Container className="py-8">
         <Breadcrumb
           items={[
             { href: rootHref, label: rootLabel },
             { href: categoryHref, label: categoryName },
-            { label: item.hint ?? "Prompt" },
+            { label: displayName },
           ]}
         />
 
@@ -46,9 +50,7 @@ export function PromptDetailView({
 
           <div className="space-y-6">
             <div className="space-y-3">
-              <h1 className="font-display text-h1 font-semibold text-hi">
-                {item.hint ?? categoryName}
-              </h1>
+              <h1 className="font-display text-h1 font-semibold text-hi">{displayName}</h1>
               <div className="flex flex-wrap items-center gap-2 font-mono text-caption text-mid">
                 <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline px-2.5 py-1">
                   <KindIcon className="h-3.5 w-3.5" />
@@ -61,6 +63,9 @@ export function PromptDetailView({
                   </span>
                 )}
               </div>
+              {/* Unique, readable, ad-safe description so the page isn't thin to
+                  users or crawlers while the full prompt stays gated (§audit 4). */}
+              <p className="text-pretty text-sm leading-relaxed text-mid">{promptLede(item)}</p>
             </div>
 
             <PromptPanel item={item} favorited={favorited} />

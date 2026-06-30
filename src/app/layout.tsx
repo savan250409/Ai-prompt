@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { fontVariables } from "@/lib/fonts";
+import { isNoindexHost } from "@/lib/config";
 import { Providers } from "@/components/providers";
 import { AppShell } from "@/components/layout/app-shell";
 
@@ -13,6 +14,8 @@ export const metadata: Metadata = {
     "A premium AI media studio. Thousands of cinematic photo & video prompts, AI filters, and creative tools. Unlock, copy, and generate.",
   applicationName: "Prompt Studio",
   metadataBase: new URL(process.env.NEXTAUTH_URL ?? "http://localhost:3000"),
+  // Keep staging/dev hosts out of Google so they don't compete with production.
+  robots: isNoindexHost() ? { index: false, follow: false } : undefined,
   openGraph: {
     type: "website",
     title: "Prompt Studio — AI Photo & Video Prompts",

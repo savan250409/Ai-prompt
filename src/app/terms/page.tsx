@@ -12,8 +12,8 @@ export default function TermsPage() {
       <Container className="py-10">
         <Prose>
           <p>
-            <strong>Template notice:</strong> this is placeholder terms text. Replace it with your
-            reviewed terms before launch.
+            These Terms of Service govern your use of Prompt Studio. By creating an account or using
+            the service, you agree to them. Please read them carefully.
           </p>
           <h2>Your account</h2>
           <p>

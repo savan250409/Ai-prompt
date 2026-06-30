@@ -7,6 +7,9 @@ import { FilterCard } from "@/components/catalog/filter-card";
 import { SectionHeader } from "@/components/catalog/section-header";
 import { ProSpotlight } from "@/components/catalog/pro-spotlight";
 import { Reveal } from "@/components/ui/reveal";
+import { JsonLd } from "@/components/seo/json-ld";
+
+const SITE = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
 export default async function HomePage() {
   const [mosaic, videos, images, filters] = await Promise.all([
@@ -18,6 +21,23 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            { "@type": "Organization", "@id": `${SITE}/#org`, name: "Prompt Studio", url: SITE },
+            {
+              "@type": "WebSite",
+              "@id": `${SITE}/#website`,
+              name: "Prompt Studio",
+              url: SITE,
+              description:
+                "Thousands of cinematic AI photo & video prompts, filters, and creative tools.",
+              publisher: { "@id": `${SITE}/#org` },
+            },
+          ],
+        }}
+      />
       <MosaicHero images={mosaic} />
 
       <Container className="space-y-16 pb-16 pt-10 md:space-y-20 md:pb-20 md:pt-12">
@@ -29,8 +49,9 @@ export default async function HomePage() {
               seeAllHref="/videos"
             />
             <Rail>
-              {videos.map((v) => (
-                <PromptCard key={v.id} item={v} />
+              {videos.map((v, i) => (
+                // prioritize the first cards: one is the mobile LCP element
+                <PromptCard key={v.id} item={v} priority={i < 2} />
               ))}
             </Rail>
           </section>
