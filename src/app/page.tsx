@@ -11,6 +11,9 @@ import { JsonLd } from "@/components/seo/json-ld";
 
 const SITE = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
+// Title/description/OG come from the root layout; this just adds the self-canonical.
+export const metadata = { alternates: { canonical: "/" } };
+
 export default async function HomePage() {
   const [mosaic, videos, images, filters] = await Promise.all([
     catalog.mosaic(),

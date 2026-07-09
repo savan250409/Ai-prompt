@@ -62,7 +62,7 @@ export function MosaicHero({ images }: { images: string[] }) {
           Unlock, copy, and generate — all in one studio.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/images" className={buttonClass({ variant: "primary", size: "lg" })}>
+          <Link href="/explore" className={buttonClass({ variant: "primary", size: "lg" })}>
             Explore prompts
             <ArrowRight className="h-4 w-4" />
           </Link>

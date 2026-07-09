@@ -67,6 +67,5 @@ for (const sig of ["SIGINT", "SIGTERM"]) {
       await fetch(BASE + path, { signal: AbortSignal.timeout(45000) });
     } catch {}
   }
-  // eslint-disable-next-line no-console
   console.log("\n  ✓ routes pre-warmed — inner pages will open instantly now\n");
 })();

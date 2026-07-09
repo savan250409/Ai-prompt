@@ -67,7 +67,9 @@ export default async function BillingPage() {
                 )}
                 {sub.status === "cancelled" ? (
                   <p className="mt-4 text-caption text-low">
-                    Your plan won&rsquo;t renew. Re-subscribe anytime from{" "}
+                    Your plan won&rsquo;t renew. You keep Pro until{" "}
+                    {sub.currentPeriodEnd.toLocaleDateString("en-IN")} — after that you can
+                    subscribe again, or switch to another plan now from{" "}
                     <Link href="/pricing" className="text-cyan hover:underline">
                       pricing
                     </Link>

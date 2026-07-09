@@ -9,7 +9,11 @@ export function Breadcrumb({ items }: { items: { href?: string; label: string }[
         <Fragment key={i}>
           {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-low" />}
           {item.href ? (
-            <Link href={item.href} className="transition-colors hover:text-hi">
+            <Link
+              href={item.href}
+              // min-h-6 (24px): WCAG 2.2 target-size minimum
+              className="inline-flex min-h-6 items-center transition-colors hover:text-hi"
+            >
               {item.label}
             </Link>
           ) : (

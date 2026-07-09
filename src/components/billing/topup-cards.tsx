@@ -12,7 +12,7 @@ import { useSession } from "@/store/session";
 import { track } from "@/lib/analytics";
 import { cn, formatInr } from "@/lib/utils";
 
-interface TopupView {
+export interface TopupView {
   id: TopupId;
   name: string;
   priceInr: number;
@@ -20,8 +20,15 @@ interface TopupView {
   badge: string | null;
 }
 
-/** One-time coin top-ups (no subscription). Mirrors the checkout flow. */
-export function TopupCards({ topups }: { topups: TopupView[] }) {
+/** One-time coin top-ups (no subscription). Mirrors the checkout flow.
+ *  `showHeading` is off when rendered under a tab that already names it. */
+export function TopupCards({
+  topups,
+  showHeading = true,
+}: {
+  topups: TopupView[];
+  showHeading?: boolean;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const me = useSession((s) => s.me);
@@ -66,12 +73,18 @@ export function TopupCards({ topups }: { topups: TopupView[] }) {
 
   return (
     <div>
-      <div className="mb-5">
-        <h2 className="font-display text-xl font-semibold text-hi">Top up coins</h2>
-        <p className="text-caption text-mid">
+      {showHeading ? (
+        <div className="mb-5">
+          <h2 className="font-display text-xl font-semibold text-hi">Top up coins</h2>
+          <p className="text-caption text-mid">
+            One-time purchase — coins are added instantly, no subscription.
+          </p>
+        </div>
+      ) : (
+        <p className="mb-5 text-center text-caption text-mid">
           One-time purchase — coins are added instantly, no subscription.
         </p>
-      </div>
+      )}
 
       <div className="grid gap-5 md:grid-cols-3">
         {topups.map((t) => {

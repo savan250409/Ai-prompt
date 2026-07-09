@@ -1,8 +1,10 @@
 import { PLANS, TOPUPS, config } from "@/lib/config";
 import { Container } from "@/components/layout/container";
-import { PageHero } from "@/components/catalog/page-hero";
-import { PricingPlans } from "@/components/billing/pricing-plans";
-import { TopupCards } from "@/components/billing/topup-cards";
+import { BillingTabs } from "@/components/billing/billing-tabs";
+import { ProHero } from "@/components/billing/pro-hero";
+import { PlanComparison } from "@/components/billing/plan-comparison";
+import { ProFaq } from "@/components/billing/pro-faq";
+import { Reveal } from "@/components/ui/reveal";
 import { JsonLd } from "@/components/seo/json-ld";
 import { pageMetadata } from "@/lib/seo";
 
@@ -50,21 +52,22 @@ export default function PricingPage() {
           })),
         }}
       />
-      <PageHero
-        eyebrow="Pricing"
-        title="Go Pro"
-        subtitle="Unlimited prompts, AI generation, and no ads. Cancel anytime."
-      />
-      <Container className="space-y-14 py-12">
-        <PricingPlans plans={plans} />
+      <ProHero />
 
-        <div className="border-t border-hairline pt-12">
-          <TopupCards topups={topups} />
-        </div>
+      <Container className="space-y-16 py-12 md:space-y-20 md:py-16">
+        <BillingTabs plans={plans} topups={topups} />
+
+        <Reveal>
+          <PlanComparison />
+        </Reveal>
+
+        <Reveal>
+          <ProFaq />
+        </Reveal>
 
         {config.devBillingTestMode && (
           <p className="text-center text-caption text-low">
-            Dev test-mode: purchases are simulated locally (Cashfree activates when keys are set).
+            Dev test-mode: purchases are simulated locally (Razorpay activates when keys are set).
           </p>
         )}
       </Container>

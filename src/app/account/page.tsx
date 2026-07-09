@@ -62,15 +62,7 @@ export default async function AccountPage() {
           )}
         </span>
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="truncate font-display text-h2 font-semibold text-hi">{name}</h1>
-            {isPro && (
-              <span className="inline-flex items-center gap-1 rounded-pill bg-grad-gold px-2 py-0.5 text-[11px] font-semibold uppercase text-gold-ink shadow-glow-gold">
-                <Gem className="h-3 w-3" />
-                Pro
-              </span>
-            )}
-          </div>
+          <h1 className="truncate font-display text-h2 font-semibold text-hi">{name}</h1>
           <p className="truncate text-caption text-mid">{user?.email}</p>
           <p className="mt-1 font-mono text-caption text-mid">
             {formatCoins(coins)} coins

@@ -8,6 +8,8 @@ import { UploadDropzone } from "./upload-dropzone";
 import { SummonResult } from "./summon-result";
 import { useGeneration } from "./use-generation";
 import { Segmented } from "@/components/ui/segmented";
+import { AspectPicker } from "./aspect-picker";
+import { ReferencePreview } from "./reference-preview";
 import { Button } from "@/components/ui/button";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { useSession } from "@/store/session";
@@ -28,6 +30,9 @@ export function GenerateClient({
   isPro,
   durations,
   resolutions,
+  sourceName,
+  sourceImage = null,
+  sourceVideo = null,
 }: {
   kind: "video" | "image";
   promptId: string;
@@ -35,6 +40,10 @@ export function GenerateClient({
   isPro: boolean;
   durations: number[];
   resolutions: number[];
+  /** the prompt you're generating from — shown as a reference preview */
+  sourceName: string;
+  sourceImage?: string | null;
+  sourceVideo?: string | null;
 }) {
   const coins = useSession((s) => s.me?.coins ?? 0);
   const [file, setFile] = useState<File | null>(null);
@@ -87,7 +96,16 @@ export function GenerateClient({
 
   return (
     <div className="grid gap-8 lg:grid-cols-2">
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
+        {(sourceImage || sourceVideo) && (
+          <ReferencePreview
+            label={kind === "video" ? "Video prompt" : "Photo prompt"}
+            name={sourceName}
+            image={sourceImage}
+            video={sourceVideo}
+          />
+        )}
+
         <div>
           <p className="mb-2 text-caption font-medium uppercase tracking-wide text-low">
             Source photo <span className="normal-case text-low">(optional)</span>
@@ -119,17 +137,15 @@ export function GenerateClient({
           </div>
         ) : (
           <div className="space-y-2">
-            <Segmented
+            <AspectPicker
               name="aspect"
-              label="Aspect ratio"
-              options={IMAGE_ASPECTS.map((a) => ({ value: a, label: a }))}
               value={aspect}
               onChange={setAspect}
               lockedValues={isPro ? [] : IMAGE_ASPECTS.slice(1)}
               onLocked={() => toast.info("Unlock all aspect ratios with Pro.")}
             />
             {!isPro && (
-              <Link href="/pricing" className="block text-caption text-gold hover:underline">
+              <Link href="/pricing" className="inline-flex min-h-6 items-center text-caption text-gold hover:underline">
                 Unlock all aspect ratios with Pro →
               </Link>
             )}

@@ -5,6 +5,7 @@ import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { Breadcrumb } from "@/components/catalog/breadcrumb";
 import { ToolStudio } from "@/components/studio/tool-studio";
+import { pageMetadata } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -13,7 +14,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { toolKey } = await params;
   const tool = await catalog.toolByKey(toolKey);
-  return { title: tool ? tool.name : "AI Tool", description: tool?.description };
+  if (!tool) return { title: "AI Tool" };
+  return pageMetadata({
+    title: tool.name,
+    description: tool.description,
+    path: `/tools/${toolKey}`,
+  });
 }
 
 export default async function ToolDetailPage({ params }: { params: Promise<{ toolKey: string }> }) {

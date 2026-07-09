@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import type { PromptDetail } from "@/lib/types";
 
+/**
+ * The site's generated share card (app/opengraph-image). Any page that declares
+ * its own `openGraph` REPLACES the root one — including the file-based image —
+ * so every helper below must re-attach this, or shared links lose their image.
+ */
+const OG_FALLBACK = "/opengraph-image";
+
 /** First clean clause of a longer text, for titles/headings. */
 function snippet(text: string | null | undefined, max = 64): string | null {
   if (!text) return null;
@@ -67,7 +74,7 @@ export function promptMetadata(item: PromptDetail, id: string): Metadata {
     `${name}. ${label} on Prompt Studio — unlock, copy, and generate.`
   ).slice(0, 160);
   const path = `/${item.kind === "video" ? "videos" : "images"}/prompt/${id}`;
-  const images = item.thumbnail ? [item.thumbnail] : undefined;
+  const images = [item.thumbnail ?? OG_FALLBACK];
 
   return {
     title,
@@ -110,8 +117,14 @@ export function pageMetadata(opts: {
       title: ogTitle,
       description,
       ...(path ? { url: path } : {}),
+      images: [OG_FALLBACK],
     },
-    twitter: { card: "summary_large_image", title: ogTitle, description },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description,
+      images: [OG_FALLBACK],
+    },
   };
 }
 

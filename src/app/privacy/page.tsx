@@ -1,9 +1,14 @@
-import type { Metadata } from "next";
 import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { Prose } from "@/components/ui/prose";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Privacy Policy" };
+export const metadata = pageMetadata({
+  title: "Privacy Policy",
+  description:
+    "How Prompt Studio collects, uses, and protects your data, and the choices you have.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

@@ -1,9 +1,14 @@
-import type { Metadata } from "next";
 import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { Prose } from "@/components/ui/prose";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Terms of Service" };
+export const metadata = pageMetadata({
+  title: "Terms of Service",
+  description:
+    "The terms that govern your use of Prompt Studio — accounts, purchases, content, and conduct.",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

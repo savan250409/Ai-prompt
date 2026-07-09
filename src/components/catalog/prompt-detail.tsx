@@ -50,7 +50,10 @@ export function PromptDetailView({
 
           <div className="space-y-6">
             <div className="space-y-3">
-              <h1 className="font-display text-h1 font-semibold text-hi">{displayName}</h1>
+              {/* Owner's choice: the collection name is the page heading. The
+                  per-prompt name still drives <title>/OG/canonical + breadcrumb,
+                  and the lede below keeps unique on-page copy (§audit 3/4). */}
+              <h1 className="font-display text-h1 font-semibold text-hi">{categoryName}</h1>
               <div className="flex flex-wrap items-center gap-2 font-mono text-caption text-mid">
                 <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline px-2.5 py-1">
                   <KindIcon className="h-3.5 w-3.5" />

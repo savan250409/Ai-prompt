@@ -58,7 +58,8 @@ export function Footer() {
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-caption text-mid transition-colors hover:text-hi"
+                    // min-h-6 (24px): WCAG 2.2 target-size minimum
+                    className="inline-flex min-h-6 items-center text-caption text-mid transition-colors hover:text-hi"
                   >
                     {l.label}
                   </Link>

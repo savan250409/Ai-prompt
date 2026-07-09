@@ -1,9 +1,14 @@
-import type { Metadata } from "next";
 import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { FeedbackForm } from "@/components/feedback/feedback-form";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Feedback" };
+export const metadata = pageMetadata({
+  title: "Feedback",
+  description:
+    "Tell us what to build next. Report a bug, request a feature, or rate Prompt Studio.",
+  path: "/feedback",
+});
 
 export default function FeedbackPage() {
   return (

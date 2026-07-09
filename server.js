@@ -9,6 +9,17 @@
  *
  * Requires a production build first:  npm run build   (creates the .next folder)
  */
+const path = require("node:path");
+
+// Load env BEFORE anything reads process.env. Next.js only auto-loads .env.local
+// when its cwd is the project root, but panels often start the process from a
+// different working directory — so DATABASE_URL/WEB_STORE would be missing and
+// DB routes (e.g. /api/auth/register) would 500. Load them explicitly from the
+// files next to THIS file (__dirname) so it works regardless of cwd. dotenv does
+// not override vars already set, so real panel/system env still wins.
+require("dotenv").config({ path: path.join(__dirname, ".env.local") });
+require("dotenv").config({ path: path.join(__dirname, ".env") });
+
 const { createServer } = require("http");
 const next = require("next");
 
@@ -20,7 +31,6 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   createServer((req, res) => handle(req, res)).listen(port, hostname, () => {
-    // eslint-disable-next-line no-console
     console.log(`> Prompt Studio ready on ${hostname}:${port}`);
   });
 });

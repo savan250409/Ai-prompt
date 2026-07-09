@@ -4,25 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, Gem } from "lucide-react";
+import { ArrowUpRight, Check, Gem } from "lucide-react";
 import type { PlanId } from "@/lib/config";
-import type { Me } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Segmented } from "@/components/ui/segmented";
 import { openRazorpayCheckout } from "./razorpay";
+import { planState } from "./plan-state";
 import { useSession } from "@/store/session";
 import { track } from "@/lib/analytics";
 import { cn, formatInr } from "@/lib/utils";
 
-/** This is the user's plan and it's still renewing → lock the button. */
-function isCurrentActive(me: Me | null, planId: PlanId): boolean {
-  return me?.plan === planId && me?.planStatus === "active";
-}
-/** This is the user's plan but cancelled → offer to resume it. */
-function isCurrentCancelled(me: Me | null, planId: PlanId): boolean {
-  return me?.plan === planId && me?.planStatus === "cancelled";
-}
-
-interface PlanView {
+export interface PlanView {
   id: PlanId;
   name: string;
   priceInr: number;
@@ -31,18 +23,29 @@ interface PlanView {
   badge: string | null;
 }
 
-const BENEFITS = [
-  "No ads, ever",
-  "Infinite photo & video prompts + exclusive content",
-  "AI image & video generation",
-  "Unlock all aspect ratios",
-];
+/** How many billing periods make a year — used to compare plans fairly. */
+const PERIODS_PER_YEAR: Record<string, number> = { week: 52, month: 12, year: 1 };
+
+const annualCost = (p: PlanView) => p.priceInr * (PERIODS_PER_YEAR[p.cadence] ?? 1);
 
 export function PricingPlans({ plans }: { plans: PlanView[] }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const me = useSession((s) => s.me);
   const [busy, setBusy] = useState<PlanId | null>(null);
+
+  // The billing toggle simply spotlights a card; every plan stays visible.
+  const popularId = plans.find((p) => p.badge === "MOST POPULAR")?.id ?? plans[0]?.id;
+  const [selected, setSelected] = useState<PlanId>(popularId);
+
+  // Savings vs. the priciest cadence, annualised (e.g. yearly vs weekly×52).
+  const baseline = plans.reduce((max, p) => Math.max(max, annualCost(p)), 0);
+  const savingsPct = (p: PlanView): number | null => {
+    if (!baseline) return null;
+    const pct = Math.round((1 - annualCost(p) / baseline) * 100);
+    return pct > 0 ? pct : null;
+  };
+  const bestSaving = plans.reduce((max, p) => Math.max(max, savingsPct(p) ?? 0), 0);
 
   async function choose(plan: PlanId) {
     if (!me?.authenticated) {
@@ -85,24 +88,46 @@ export function PricingPlans({ plans }: { plans: PlanView[] }) {
 
   return (
     <div className="space-y-10">
+      {/* billing toggle */}
+      <div className="flex flex-col items-center gap-2">
+        <Segmented<PlanId>
+          name="billing-cadence"
+          options={plans.map((p) => ({ value: p.id, label: p.name }))}
+          value={selected}
+          onChange={setSelected}
+        />
+        {bestSaving > 0 && (
+          <p className="text-caption text-mid">
+            Save up to <span className="font-semibold text-gold">{bestSaving}%</span> with a longer
+            plan
+          </p>
+        )}
+      </div>
+
       <div className="grid gap-5 md:grid-cols-3">
         {plans.map((plan) => {
-          const popular = plan.badge === "MOST POPULAR";
-          const best = plan.badge === "BEST VALUE";
+          const { owned, active, spotlight, ctaLabel, ctaDisabled } = planState(me, plan, selected);
+          const saving = savingsPct(plan);
+
           return (
             <div
               key={plan.id}
+              aria-current={owned ? "true" : undefined}
               className={cn(
-                "relative flex flex-col rounded-modal border bg-surface p-6 shadow-card transition-transform duration-base",
-                popular ? "border-cyan/40 shadow-glow md:-translate-y-2" : "border-hairline",
-                best && "ring-gold",
+                "relative flex flex-col rounded-modal border bg-surface p-6 shadow-card transition-all duration-base ease-out-expo",
+                owned
+                  ? "border-hairline opacity-80" // your plan → calm, never highlighted
+                  : spotlight
+                    ? "border-cyan/40 shadow-glow md:-translate-y-2"
+                    : "border-hairline hover:-translate-y-1",
               )}
             >
-              {plan.badge && (
+              {/* badge — hidden on your own plan so it isn't highlighted */}
+              {!owned && plan.badge && (
                 <span
                   className={cn(
                     "absolute -top-3 left-6 rounded-pill px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide shadow-card",
-                    best
+                    plan.badge === "BEST VALUE"
                       ? "bg-grad-gold text-gold-ink shadow-glow-gold"
                       : "bg-grad-electric text-on-electric",
                   )}
@@ -111,53 +136,58 @@ export function PricingPlans({ plans }: { plans: PlanView[] }) {
                 </span>
               )}
 
-              <h3 className="font-display text-lg font-semibold text-hi">{plan.name}</h3>
+              {owned && (
+                <span className="absolute -top-3 left-6 inline-flex items-center gap-1 rounded-pill border border-hairline bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-mid">
+                  <Check className="h-3 w-3" strokeWidth={3} />
+                  {active ? "Your plan" : "Cancelled"}
+                </span>
+              )}
+
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-display text-lg font-semibold text-hi">{plan.name}</h3>
+                {!owned && saving && (
+                  <span className="rounded-pill border border-hairline px-2 py-0.5 font-mono text-[11px] text-gold">
+                    save {saving}%
+                  </span>
+                )}
+              </div>
+
               <div className="mt-3 flex items-baseline gap-1">
                 <span className="font-display text-display text-3xl font-semibold text-hi">
                   {formatInr(plan.priceInr)}
                 </span>
                 <span className="text-caption text-mid">/ {plan.cadence}</span>
               </div>
+
               <p className="mt-2 inline-flex items-center gap-1.5 font-mono text-sm text-gold">
                 <Gem className="h-3.5 w-3.5" />
                 {plan.coins} coins included
               </p>
 
               <div className="mt-6">
-                {isCurrentActive(me, plan.id) ? (
+                {ctaDisabled ? (
                   <Button variant="secondary" className="w-full" disabled>
-                    Current plan active
+                    {ctaLabel}
                   </Button>
                 ) : (
                   <Button
-                    variant={best ? "pro" : "primary"}
+                    variant={spotlight ? "pro" : "primary"}
                     className="w-full"
                     onClick={() => choose(plan.id)}
                     loading={busy === plan.id}
                   >
-                    {busy === plan.id ? null : best ? <Gem className="h-4 w-4" /> : null}
-                    {isCurrentCancelled(me, plan.id) ? "Resume plan" : `Choose ${plan.name}`}
+                    {busy === plan.id ? null : ctaLabel === "Upgrade" ? (
+                      <ArrowUpRight className="h-4 w-4" />
+                    ) : spotlight ? (
+                      <Gem className="h-4 w-4" />
+                    ) : null}
+                    {ctaLabel}
                   </Button>
                 )}
               </div>
             </div>
           );
         })}
-      </div>
-
-      {/* shared benefits */}
-      <div className="rounded-modal border border-hairline bg-surface p-6">
-        <h3 className="font-display text-base font-semibold text-hi">Every plan includes</h3>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-          {BENEFITS.map((b) => (
-            <li key={b} className="flex items-start gap-2.5">
-              <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-grad-gold text-gold-ink">
-                <Check className="h-3 w-3" strokeWidth={3} />
-              </span>
-              <span className="text-sm text-hi">{b}</span>
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   );

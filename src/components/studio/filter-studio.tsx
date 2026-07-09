@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import { ReferencePreview } from "./reference-preview";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -10,7 +10,7 @@ import type { FilterItem } from "@/lib/types";
 import { UploadDropzone } from "./upload-dropzone";
 import { SummonResult } from "./summon-result";
 import { useGeneration } from "./use-generation";
-import { Segmented } from "@/components/ui/segmented";
+import { AspectPicker } from "./aspect-picker";
 import { Button } from "@/components/ui/button";
 import { useSession, selectIsPro } from "@/store/session";
 import { fileToDataUri } from "@/lib/file";
@@ -54,37 +54,24 @@ export function FilterStudio({ filter, coinCost }: { filter: FilterItem; coinCos
 
   return (
     <div className="grid gap-8 lg:grid-cols-2">
-      <div>
-        <p className="mb-2 text-caption font-medium uppercase tracking-wide text-low">Style sample</p>
-        <div className="relative aspect-square overflow-hidden rounded-card border border-hairline bg-surface-2">
-          {filter.image && (
-            <Image src={filter.image} alt={filter.name} fill sizes="(max-width:768px) 100vw, 40vw" className="object-cover" />
-          )}
-          <div className="media-scrim absolute inset-0" />
-          <span className="absolute bottom-3 left-3 rounded-pill bg-black/45 px-2.5 py-1 text-caption text-white/90 backdrop-blur-sm">
-            {filter.name}
-          </span>
-        </div>
-      </div>
+      <ReferencePreview label="Style sample" name={filter.name} image={filter.image} />
 
-      <div className="space-y-5">
+      <div className="min-w-0 space-y-5">
         <p className="text-caption font-medium uppercase tracking-wide text-low">Your photo</p>
         {state === "idle" ? (
           <>
             <UploadDropzone value={file} onChange={setFile} />
 
             <div className="space-y-2">
-              <Segmented
+              <AspectPicker
                 name="filter-aspect"
-                label="Aspect ratio"
-                options={IMAGE_ASPECTS.map((a) => ({ value: a, label: a }))}
                 value={aspect}
                 onChange={setAspect}
                 lockedValues={isPro ? [] : IMAGE_ASPECTS.slice(1)}
                 onLocked={() => toast.info("Unlock all aspect ratios with Pro.")}
               />
               {!isPro && (
-                <Link href="/pricing" className="block text-caption text-gold hover:underline">
+                <Link href="/pricing" className="inline-flex min-h-6 items-center text-caption text-gold hover:underline">
                   Unlock all aspect ratios with Pro →
                 </Link>
               )}

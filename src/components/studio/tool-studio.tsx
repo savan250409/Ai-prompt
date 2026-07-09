@@ -9,7 +9,8 @@ import { UploadDropzone } from "./upload-dropzone";
 import { SummonResult } from "./summon-result";
 import { ToolPayDialog } from "./tool-pay-dialog";
 import { useGeneration } from "./use-generation";
-import { Segmented } from "@/components/ui/segmented";
+import { AspectPicker } from "./aspect-picker";
+import { ReferencePreview } from "./reference-preview";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useSession, selectIsPro } from "@/store/session";
@@ -96,9 +97,13 @@ export function ToolStudio({ tool }: { tool: Tool }) {
 
   return (
     <div className={state === "idle" ? "mx-auto max-w-xl" : "mx-auto max-w-3xl"}>
-      <div className="space-y-5">
+      <div className="min-w-0 space-y-5">
         {state === "idle" ? (
           <>
+            {tool.afterImage && (
+              <ReferencePreview label="Tool sample" name={tool.name} image={tool.afterImage} />
+            )}
+
             {needsUpload && <UploadDropzone value={file} onChange={setFile} />}
 
             {needsPrompt && (
@@ -122,17 +127,15 @@ export function ToolStudio({ tool }: { tool: Tool }) {
 
             {supportsAspect && (
               <div className="space-y-2">
-                <Segmented
+                <AspectPicker
                   name="tool-aspect"
-                  label="Aspect ratio"
-                  options={IMAGE_ASPECTS.map((a) => ({ value: a, label: a }))}
                   value={aspect}
                   onChange={setAspect}
                   lockedValues={isPro ? [] : IMAGE_ASPECTS.slice(1)}
                   onLocked={() => toast.info("Unlock all aspect ratios with Pro.")}
                 />
                 {!isPro && (
-                  <Link href="/pricing" className="block text-caption text-gold hover:underline">
+                  <Link href="/pricing" className="inline-flex min-h-6 items-center text-caption text-gold hover:underline">
                     Unlock all aspect ratios with Pro →
                   </Link>
                 )}

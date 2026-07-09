@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
  * hydration — so content never waits on JavaScript to appear. Drop-in for
  * <Image fill .../>.
  */
-export function SmoothImage({ className, ...props }: ImageProps) {
-  return <Image {...props} className={cn("animate-media-in", className)} />;
+// `alt` is destructured (not just spread) so it's statically visible to
+// jsx-a11y and can never be silently omitted by a caller.
+export function SmoothImage({ className, alt, ...props }: ImageProps) {
+  return <Image alt={alt} {...props} className={cn("animate-media-in", className)} />;
 }

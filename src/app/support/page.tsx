@@ -1,10 +1,15 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { config } from "@/lib/config";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Support" };
+export const metadata = pageMetadata({
+  title: "Support",
+  description:
+    "Answers to common questions about unlocks, coins, Pro, and billing — plus how to reach us.",
+  path: "/support",
+});
 
 const FAQ = [
   {

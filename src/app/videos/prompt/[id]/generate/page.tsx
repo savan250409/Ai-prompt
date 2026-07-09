@@ -8,6 +8,7 @@ import { Container } from "@/components/layout/container";
 import { PageHero } from "@/components/catalog/page-hero";
 import { Breadcrumb } from "@/components/catalog/breadcrumb";
 import { GenerateClient } from "@/components/studio/generate-client";
+import { promptDisplayName } from "@/lib/seo";
 
 export const metadata: Metadata = { title: "Generate Video" };
 
@@ -44,6 +45,9 @@ export default async function GenerateVideoPage({ params }: { params: Promise<{ 
           isPro={viewer.isPro}
           durations={[...config.video.durations]}
           resolutions={[...config.video.resolutions]}
+          sourceName={promptDisplayName(item, item.id)}
+          sourceImage={item.thumbnail}
+          sourceVideo={item.preview}
         />
       </Container>
     </>
