@@ -57,16 +57,16 @@ const source: typeof dbCatalog = config.api.enabled
     : mockSource;
 
 import {
-  YOUMIND_CATEGORY,
-  getYoumindListItems,
-  getYoumindPromptDetail,
-} from "@/lib/youmind-catalog";
+  TRENDING_CATEGORY,
+  getTrendingListItems,
+  getTrendingPromptDetail,
+} from "@/lib/trending-catalog";
 
 export const catalog = {
   videoCategories: (): Promise<Category[]> =>
     source.videoCategories().then((cs) => cs.map(fixCategory)),
   imageCategories: (): Promise<Category[]> =>
-    source.imageCategories().then((cs) => [fixCategory(YOUMIND_CATEGORY), ...cs.map(fixCategory)]),
+    source.imageCategories().then((cs) => [fixCategory(TRENDING_CATEGORY), ...cs.map(fixCategory)]),
   filterCategories: (): Promise<Category[]> =>
     source.filterCategories().then((cs) => cs.map(fixCategory)),
 
@@ -79,8 +79,8 @@ export const catalog = {
     categoryId: string,
     paging?: { skip?: number; take?: number },
   ): Promise<PromptListItem[]> => {
-    if (categoryId === "youmind-prompts") {
-      return getYoumindListItems().then((items) => {
+    if (categoryId === "trending-prompts") {
+      return getTrendingListItems().then((items) => {
         const skip = paging?.skip ?? 0;
         const take = paging?.take ?? items.length;
         return items.slice(skip, skip + take).map(fixListItem);
@@ -92,16 +92,16 @@ export const catalog = {
   videoDetail: (id: string, unlocked: boolean, categoryId?: string): Promise<PromptDetail | null> =>
     source.videoDetail(id, unlocked, categoryId).then(fixDetail),
   imageDetail: (id: string, unlocked: boolean, categoryId?: string): Promise<PromptDetail | null> => {
-    if (id.startsWith("ym-") || categoryId === "youmind-prompts") {
-      return getYoumindPromptDetail(id, unlocked).then(fixDetail);
+    if (id.startsWith("tr-") || categoryId === "trending-prompts") {
+      return getTrendingPromptDetail(id, unlocked).then(fixDetail);
     }
     return source.imageDetail(id, unlocked, categoryId).then(fixDetail);
   },
 
   /** Server-only: full prompt text (used after an unlock is verified). */
   rawPrompt: (kind: "video" | "image", id: string, categoryId?: string): Promise<string | null> => {
-    if (kind === "image" && (id.startsWith("ym-") || categoryId === "youmind-prompts")) {
-      return getYoumindPromptDetail(id, true).then((d) => d?.prompt ?? null);
+    if (kind === "image" && (id.startsWith("tr-") || categoryId === "trending-prompts")) {
+      return getTrendingPromptDetail(id, true).then((d) => d?.prompt ?? null);
     }
     return source.rawPrompt(kind, id, categoryId);
   },
@@ -119,11 +119,11 @@ export const catalog = {
     source.featuredVideos().then((ps) => ps.map(fixListItem)),
   featuredImages: async (): Promise<PromptListItem[]> => {
     try {
-      const [youmindItems, featured] = await Promise.all([
-        getYoumindListItems().catch(() => []),
+      const [trendingItems, featured] = await Promise.all([
+        getTrendingListItems().catch(() => []),
         source.featuredImages(),
       ]);
-      return [...youmindItems, ...featured.map(fixListItem)];
+      return [...trendingItems, ...featured.map(fixListItem)];
     } catch {
       return source.featuredImages().then((ps) => ps.map(fixListItem));
     }

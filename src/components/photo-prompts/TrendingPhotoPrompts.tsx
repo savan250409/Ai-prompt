@@ -12,7 +12,7 @@ interface PromptItem {
   promptText: string;
 }
 
-export function YoumindPhotoPrompts() {
+export function TrendingPhotoPrompts() {
   const [prompts, setPrompts] = useState<PromptItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function YoumindPhotoPrompts() {
     async function loadPrompts() {
       try {
         setLoading(true);
-        const res = await fetch("/api/youmind-prompts");
+        const res = await fetch("/api/trending-prompts");
         const data = await res.json();
         if (data.success && Array.isArray(data.prompts)) {
           setPrompts(data.prompts);
@@ -150,7 +150,7 @@ export function YoumindPhotoPrompts() {
                       onError={(e) => {
                         // Fallback image
                         (e.target as HTMLImageElement).src =
-                          "https://cms-assets.youmind.com/media/1785654872281_yitryr_HOqLfg0XQAA9fNU.jpg";
+                          "/cdn-cgi/image/width=640,quality=90,format=auto/https://cms-assets.youmind.com/media/1785654872281_yitryr_HOqLfg0XQAA9fNU.jpg";
                       }}
                     />
                     <span className="absolute top-2 left-2 z-10 border border-white/70 bg-white/90 dark:bg-slate-900/90 dark:border-slate-700 px-1.5 py-0.5 font-mono text-[9px] font-black text-[#0d47a1] dark:text-cyan-400 shadow-[0_2px_8px_rgba(15,23,42,0.12)] backdrop-blur md:text-[10px] rounded-sm">

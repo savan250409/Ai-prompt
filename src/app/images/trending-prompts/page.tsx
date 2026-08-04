@@ -9,12 +9,12 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "New AI Photo Prompt Examples — Prompt Studio",
   description:
-    "Explore 62 live scraped AI photo prompt examples for portraits and selfies directly from YouMind.",
-  path: "/images/youmind-prompts",
+    "Explore live AI photo prompt examples for portraits and selfies directly from our trending presets.",
+  path: "/images/trending-prompts",
 });
 
-export default async function YoumindPromptsCategoryPage() {
-  const items = await catalog.imagesByCategory("youmind-prompts");
+export default async function TrendingPromptsCategoryPage() {
+  const items = await catalog.imagesByCategory("trending-prompts");
   const total = items.length;
 
   return (

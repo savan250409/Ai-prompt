@@ -3,7 +3,7 @@ import type { Category, PromptDetail, PromptListItem } from "@/lib/types";
 let cacheTime = 0;
 let cachedPrompts: any[] = [];
 
-export async function fetchYoumindScrapedData() {
+export async function fetchTrendingScrapedData() {
   const now = Date.now();
   // Cache for 30 minutes in memory
   if (cachedPrompts.length > 0 && now - cacheTime < 30 * 60 * 1000) {
@@ -18,7 +18,7 @@ export async function fetchYoumindScrapedData() {
       },
     });
 
-    if (!res.ok) throw new Error("Failed to fetch YouMind page");
+    if (!res.ok) throw new Error("Failed to fetch landing presets page");
 
     const html = await res.text();
 
@@ -114,7 +114,7 @@ export async function fetchYoumindScrapedData() {
           const badge = String(idx + 1).padStart(2, "0");
 
           results.push({
-            id: `ym-${idx + 1}`,
+            id: `tr-${idx + 1}`,
             rawId: String(idx + 1),
             title: obj.title,
             category,
@@ -136,25 +136,25 @@ export async function fetchYoumindScrapedData() {
 
     return results;
   } catch (err) {
-    console.error("Error fetching YouMind data:", err);
+    console.error("Error fetching trending preset data:", err);
     return cachedPrompts;
   }
 }
 
-export const YOUMIND_CATEGORY: Category = {
-  id: "youmind-prompts",
+export const TRENDING_CATEGORY: Category = {
+  id: "trending-prompts",
   name: "New AI Photo Prompt Examples",
   type: "Solo",
   image: "https://cms-assets.youmind.com/media/1785654872281_yitryr_HOqLfg0XQAA9fNU.jpg",
   sortOrder: 0,
 };
 
-export async function getYoumindListItems(): Promise<PromptListItem[]> {
-  const data = await fetchYoumindScrapedData();
+export async function getTrendingListItems(): Promise<PromptListItem[]> {
+  const data = await fetchTrendingScrapedData();
   return data.map((item) => ({
     id: item.id,
     kind: "image",
-    categoryId: "youmind-prompts",
+    categoryId: "trending-prompts",
     thumbnail: item.imgSrc,
     preview: null,
     hint: item.title,
@@ -164,18 +164,18 @@ export async function getYoumindListItems(): Promise<PromptListItem[]> {
   }));
 }
 
-export async function getYoumindPromptDetail(
+export async function getTrendingPromptDetail(
   id: string,
   unlocked: boolean = true
 ): Promise<PromptDetail | null> {
-  const data = await fetchYoumindScrapedData();
+  const data = await fetchTrendingScrapedData();
   const item = data.find((d) => d.id === id || d.rawId === id);
   if (!item) return null;
 
   return {
     id: item.id,
     kind: "image",
-    categoryId: "youmind-prompts",
+    categoryId: "trending-prompts",
     thumbnail: item.imgSrc,
     preview: null,
     hint: item.title,

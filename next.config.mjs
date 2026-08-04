@@ -26,7 +26,7 @@ const nextConfig = {
     remotePatterns: [
       // live upstream catalog API media (aivibecode)
       { protocol: "https", hostname: "aiphotomaker.aivibecode.in" },
-      // YouMind media
+      // Preset assets media
       { protocol: "https", hostname: "cms-assets.youmind.com" },
       { protocol: "https", hostname: "youmind.com" },
       { protocol: "https", hostname: "*.youmind.com" },
