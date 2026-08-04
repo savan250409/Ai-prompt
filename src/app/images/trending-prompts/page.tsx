@@ -7,7 +7,7 @@ import { pluralize } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
-  title: "New AI Photo Prompt Examples — Prompt Studio",
+  title: "AI Photo Prompts — Prompt Studio",
   description:
     "Explore live AI photo prompt examples for portraits and selfies directly from our trending presets.",
   path: "/images/trending-prompts",
@@ -20,9 +20,9 @@ export default async function TrendingPromptsCategoryPage() {
   return (
     <>
       <PageHero
-        title="New AI Photo Prompt Examples"
+        title="AI Photo Prompts"
         subtitle={`${pluralize(total, "photo prompt")}`}
-        top={<Breadcrumb items={[{ href: "/images", label: "Images" }, { label: "New AI Photo Prompt Examples" }]} />}
+        top={<Breadcrumb items={[{ href: "/images", label: "Images" }, { label: "AI Photo Prompts" }]} />}
       />
       <Container className="py-10">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">

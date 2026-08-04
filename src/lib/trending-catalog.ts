@@ -144,7 +144,7 @@ export async function fetchTrendingScrapedData() {
 export const TRENDING_CATEGORY: Category = {
   id: "trending-prompts",
   name: "New AI Photo Prompt Examples",
-  type: "Solo",
+  // type: "Solo",
   image: "https://cms-assets.youmind.com/media/1785654872281_yitryr_HOqLfg0XQAA9fNU.jpg",
   sortOrder: 0,
 };

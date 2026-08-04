@@ -12,7 +12,7 @@ export default function PromptSection() {
               Portrait and selfie prompts
             </div>
             <h2 className="text-xl font-black uppercase leading-tight tracking-normal text-[#0d47a1] text-balance md:text-4xl md:leading-none">
-              New AI Photo Prompt Examples
+              AI Photo Prompts
             </h2>
           </div>
           <p className="border-[#0d47a1]/45 border-l-2 pl-3 text-sm font-bold leading-6 text-[#475569] md:pl-4 md:text-base">
