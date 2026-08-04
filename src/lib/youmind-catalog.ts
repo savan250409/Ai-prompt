@@ -21,77 +21,113 @@ export async function fetchYoumindScrapedData() {
     if (!res.ok) throw new Error("Failed to fetch YouMind page");
 
     const html = await res.text();
-    const articleRegex = /<article[\s\S]*?<\/article>/g;
-    const articleMatches = [...html.matchAll(articleRegex)];
 
-    const unescapedHtml = html
-      .replace(/\\"/g, '"')
-      .replace(/\\\\/g, "\\")
-      .replace(/\\n/g, "\n");
+    // 1. Extract and combine all next_f pushes
+    const pushRegex = /self\.__next_f\.push\(\[1,\s*"([\s\S]*?)"\]\)/g;
+    let rawPayload = "";
+    let match;
+    while ((match = pushRegex.exec(html)) !== null) {
+      let chunk = match[1];
+      // Unescape JavaScript string literal
+      chunk = chunk
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\')
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '\r')
+        .replace(/\\t/g, '\t');
+      rawPayload += chunk;
+    }
 
-    const results = articleMatches.map((match, idx) => {
-      const articleHtml = match[0];
-      const titleMatch = articleHtml.match(/<h3[^>]*>([\s\S]*?)<\/h3>/);
-      const title = titleMatch ? titleMatch[1].trim() : `AI Photo Prompt #${idx + 1}`;
+    // 2. Extract string block definitions: ID:T[hex_length],[content] or ID:"[content]"
+    const blocks: Record<string, string> = {};
+    const blockHeaderRegex = /(\d+):T([0-9a-fA-F]+),/g;
+    let headerMatch;
+    while ((headerMatch = blockHeaderRegex.exec(rawPayload)) !== null) {
+      const id = headerMatch[1];
+      const hexLen = headerMatch[2];
+      const len = parseInt(hexLen, 16);
+      const contentStart = headerMatch.index + headerMatch[0].length;
+      let content = rawPayload.substr(contentStart, len);
+      try {
+        content = JSON.parse('"' + content.replace(/"/g, '\\"') + '"');
+      } catch (e) {}
+      blocks[id] = content;
+    }
 
-      const descMatch = articleHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/);
-      const category = descMatch
-        ? descMatch[1].trim().replace(/&amp;/g, "&")
-        : "Portrait / Selfie • Photography";
+    // Also parse string blocks like: ID:"content"
+    const shortStringRegex = /(\d+):"([^"]+)"/g;
+    let shortMatch;
+    while ((shortMatch = shortStringRegex.exec(rawPayload)) !== null) {
+      blocks[shortMatch[1]] = shortMatch[2];
+    }
 
-      let imgSrc = "";
-      const cmsMatch = articleHtml.match(
-        /https%3A%2F%2Fcms-assets\.youmind\.com%2Fmedia%2F[a-zA-Z0-9_\-\.]+/
-      );
-      if (cmsMatch) {
-        imgSrc = decodeURIComponent(cmsMatch[0]);
-      } else {
-        const srcMatch = articleHtml.match(/src="([^"]+)"/);
-        if (srcMatch) {
-          let s = srcMatch[1];
-          if (s.includes("https%3A%2F%2F")) {
-            s = decodeURIComponent(s);
-            const pos = s.indexOf("https://");
-            if (pos !== -1) s = s.substring(pos);
+    // 3. Find all prompt objects by scanning for `{"id":"cms-`
+    const results: any[] = [];
+    let pos = 0;
+    let idx = 0;
+
+    while ((pos = rawPayload.indexOf('{"id":"cms-', pos)) !== -1) {
+      // Find the matching closing curly brace
+      let braceCount = 1;
+      let end = pos + 1;
+      let inString = false;
+      let escaped = false;
+      
+      while (braceCount > 0 && end < rawPayload.length) {
+        const char = rawPayload[end];
+        if (escaped) {
+          escaped = false;
+        } else if (char === '\\') {
+          escaped = true;
+        } else if (char === '"') {
+          inString = !inString;
+        } else if (!inString) {
+          if (char === '{') braceCount++;
+          else if (char === '}') braceCount--;
+        }
+        end++;
+      }
+
+      const objStr = rawPayload.substring(pos, end);
+      pos = end; // advance position
+      
+      try {
+        const obj = JSON.parse(objStr);
+        if (obj.title && (obj.prompt || obj.imageUrl)) {
+          let promptText = obj.prompt ?? "";
+          if (promptText.startsWith('$')) {
+            const refId = promptText.substring(1);
+            if (blocks[refId]) {
+              promptText = blocks[refId];
+            }
           }
-          imgSrc = s;
+
+          if (!promptText || promptText.length < 20) {
+            promptText = `A hyper-detailed, high-fidelity AI photo prompt for "${obj.title}". Preserving facial structure, authentic skin details, cinematic lighting, and realistic depth of field. Designed for portrait and selfie enhancement.`;
+          }
+
+          const category = obj.traits 
+            ? obj.traits.split(' • ').slice(0, 2).join(' • ') 
+            : "Portrait / Selfie • Photography";
+
+          const imgSrc = obj.imageUrl ?? obj.imgSrc ?? "https://cms-assets.youmind.com/media/1785654872281_yitryr_HOqLfg0XQAA9fNU.jpg";
+          const badge = String(idx + 1).padStart(2, "0");
+
+          results.push({
+            id: `ym-${idx + 1}`,
+            rawId: String(idx + 1),
+            title: obj.title,
+            category,
+            imgSrc,
+            badge,
+            promptText,
+          });
+          idx++;
         }
+      } catch (e) {
+        // Skip failed parse
       }
-
-      if (!imgSrc) {
-        imgSrc =
-          "https://cms-assets.youmind.com/media/1785654872281_yitryr_HOqLfg0XQAA9fNU.jpg";
-      }
-
-      const badge = String(idx + 1).padStart(2, "0");
-
-      // Extract prompt text
-      let promptText = "";
-      const titlePos = unescapedHtml.indexOf(title);
-      if (titlePos !== -1) {
-        const chunk = unescapedHtml.substring(titlePos, titlePos + 2500);
-        const textMatches = chunk.match(
-          /(?:Transform|Use|Create|A photo|A portrait|Using|A hyper-detailed|An AI|Photorealistic)[^"<>]{30,800}/gi
-        );
-        if (textMatches && textMatches.length > 0) {
-          promptText = textMatches.sort((a, b) => b.length - a.length)[0].trim();
-        }
-      }
-
-      if (!promptText || promptText.length < 20) {
-        promptText = `A hyper-detailed, high-fidelity AI photo prompt for "${title}". (${category}). Preserving facial structure, authentic skin details, cinematic lighting, and realistic depth of field. Designed for portrait and selfie enhancement.`;
-      }
-
-      return {
-        id: `ym-${idx + 1}`,
-        rawId: String(idx + 1),
-        title,
-        category,
-        imgSrc,
-        badge,
-        promptText,
-      };
-    });
+    }
 
     if (results.length > 0) {
       cachedPrompts = results;
