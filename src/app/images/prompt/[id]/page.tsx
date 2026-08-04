@@ -1,0 +1,56 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { catalog } from "@/data/catalog";
+import { getViewer, isPromptUnlocked } from "@/server/entitlements";
+import { store } from "@/server/store";
+import { PromptDetailView } from "@/components/catalog/prompt-detail";
+import { promptMetadata } from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ c?: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const { c } = await searchParams;
+  const item = await catalog.imageDetail(id, false, c);
+  if (!item) return { title: "Photo Prompt" };
+  return promptMetadata(item, id);
+}
+
+export default async function ImagePromptPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ c?: string }>;
+}) {
+  const { id } = await params;
+  const { c } = await searchParams;
+  const unlocked = await isPromptUnlocked("image", id);
+  const item = await catalog.imageDetail(id, unlocked, c);
+  if (!item) notFound();
+
+  const viewer = await getViewer();
+  const [cats, sameCat, favorited] = await Promise.all([
+    catalog.imageCategories(),
+    catalog.imagesByCategory(item.categoryId, { skip: 0, take: 12 }),
+    viewer.userId ? store.favorites.has(viewer.userId, "image", item.id) : Promise.resolve(false),
+  ]);
+  const category = cats.find((c) => c.id === item.categoryId);
+  const recommended = sameCat.filter((r) => r.id !== item.id).slice(0, 10);
+
+  return (
+    <PromptDetailView
+      item={item}
+      categoryName={category?.name ?? "Images"}
+      categoryHref={`/images/${item.categoryId}`}
+      rootHref="/images"
+      rootLabel="Images"
+      recommended={recommended}
+      favorited={favorited}
+    />
+  );
+}
