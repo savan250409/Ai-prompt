@@ -30,6 +30,8 @@ const nextConfig = {
       { protocol: "https", hostname: "cms-assets.youmind.com" },
       { protocol: "https", hostname: "youmind.com" },
       { protocol: "https", hostname: "*.youmind.com" },
+      // Twitter media (for video thumbnails)
+      { protocol: "https", hostname: "pbs.twimg.com" },
       // Runware generated output (im = images, vm = videos)
       { protocol: "https", hostname: "im.runware.ai" },
       { protocol: "https", hostname: "vm.runware.ai" },

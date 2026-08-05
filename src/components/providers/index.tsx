@@ -7,6 +7,17 @@ import { Toaster } from "sonner";
 import { SmoothScroll } from "./smooth-scroll";
 import { SessionSync } from "./session-sync";
 
+// Filter out the React 19 next-themes script tag warning/error in development
+if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+  const orig = console.error;
+  console.error = (...args: unknown[]) => {
+    if (typeof args[0] === "string" && args[0].includes("Encountered a script tag")) {
+      return;
+    }
+    orig.apply(console, args);
+  };
+}
+
 /**
  * App-wide client providers — §2.
  * - next-themes drives [data-theme] on <html> (dark default, no FOUC via the

@@ -61,10 +61,15 @@ import {
   getTrendingListItems,
   getTrendingPromptDetail,
 } from "@/lib/trending-catalog";
+import {
+  TRENDING_VIDEO_CATEGORY,
+  getTrendingVideoListItems,
+  getTrendingVideoPromptDetail,
+} from "@/lib/trending-video-catalog";
 
 export const catalog = {
   videoCategories: (): Promise<Category[]> =>
-    source.videoCategories().then((cs) => cs.map(fixCategory)),
+    source.videoCategories().then((cs) => [fixCategory(TRENDING_VIDEO_CATEGORY), ...cs.map(fixCategory)]),
   imageCategories: (): Promise<Category[]> =>
     source.imageCategories().then((cs) => [fixCategory(TRENDING_CATEGORY), ...cs.map(fixCategory)]),
   filterCategories: (): Promise<Category[]> =>
@@ -73,8 +78,16 @@ export const catalog = {
   videosByCategory: (
     categoryId: string,
     paging?: { skip?: number; take?: number },
-  ): Promise<PromptListItem[]> =>
-    source.videosByCategory(categoryId, paging).then((ps) => ps.map(fixListItem)),
+  ): Promise<PromptListItem[]> => {
+    if (categoryId === "trending-video-prompts") {
+      return getTrendingVideoListItems().then((items) => {
+        const skip = paging?.skip ?? 0;
+        const take = paging?.take ?? items.length;
+        return items.slice(skip, skip + take).map(fixListItem);
+      });
+    }
+    return source.videosByCategory(categoryId, paging).then((ps) => ps.map(fixListItem));
+  },
   imagesByCategory: (
     categoryId: string,
     paging?: { skip?: number; take?: number },
@@ -89,8 +102,12 @@ export const catalog = {
     return source.imagesByCategory(categoryId, paging).then((ps) => ps.map(fixListItem));
   },
 
-  videoDetail: (id: string, unlocked: boolean, categoryId?: string): Promise<PromptDetail | null> =>
-    source.videoDetail(id, unlocked, categoryId).then(fixDetail),
+  videoDetail: (id: string, unlocked: boolean, categoryId?: string): Promise<PromptDetail | null> => {
+    if (id.startsWith("tr-v-") || categoryId === "trending-video-prompts") {
+      return getTrendingVideoPromptDetail(id, unlocked).then(fixDetail);
+    }
+    return source.videoDetail(id, unlocked, categoryId).then(fixDetail);
+  },
   imageDetail: (id: string, unlocked: boolean, categoryId?: string): Promise<PromptDetail | null> => {
     if (id.startsWith("tr-") || categoryId === "trending-prompts") {
       return getTrendingPromptDetail(id, unlocked).then(fixDetail);
@@ -100,6 +117,9 @@ export const catalog = {
 
   /** Server-only: full prompt text (used after an unlock is verified). */
   rawPrompt: (kind: "video" | "image", id: string, categoryId?: string): Promise<string | null> => {
+    if (kind === "video" && (id.startsWith("tr-v-") || categoryId === "trending-video-prompts")) {
+      return getTrendingVideoPromptDetail(id, true).then((d) => d?.prompt ?? null);
+    }
     if (kind === "image" && (id.startsWith("tr-") || categoryId === "trending-prompts")) {
       return getTrendingPromptDetail(id, true).then((d) => d?.prompt ?? null);
     }
@@ -115,8 +135,17 @@ export const catalog = {
   tools: (): Promise<Tool[]> => source.tools(),
   toolByKey: (key: string): Promise<Tool | null> => source.toolByKey(key),
 
-  featuredVideos: (): Promise<PromptListItem[]> =>
-    source.featuredVideos().then((ps) => ps.map(fixListItem)),
+  featuredVideos: async (): Promise<PromptListItem[]> => {
+    try {
+      const [trendingVideoItems, featured] = await Promise.all([
+        getTrendingVideoListItems().catch(() => []),
+        source.featuredVideos(),
+      ]);
+      return [...trendingVideoItems.slice(0, 1), ...featured.map(fixListItem)];
+    } catch {
+      return source.featuredVideos().then((ps) => ps.map(fixListItem));
+    }
+  },
   featuredImages: async (): Promise<PromptListItem[]> => {
     try {
       const [trendingItems, featured] = await Promise.all([
