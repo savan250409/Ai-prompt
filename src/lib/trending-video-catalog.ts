@@ -79,6 +79,7 @@ export async function fetchTrendingVideoScrapedData() {
       .replace(/\\t/g, '\t');
 
     const results: any[] = [];
+    const seenIds = new Set<number>();
     let pos = 0;
     let idx = 0;
     while ((pos = decodedPayload.indexOf('{"prompt":{"id":', pos)) !== -1) {
@@ -109,6 +110,10 @@ export async function fetchTrendingVideoScrapedData() {
         const parentObj = JSON.parse(objStr);
         const obj = parentObj.prompt;
         if (obj && obj.title) {
+          if (seenIds.has(obj.id)) {
+            continue;
+          }
+          seenIds.add(obj.id);
           let promptText = obj.content ?? "";
           if (promptText.startsWith('$')) {
             const refId = promptText.substring(1);

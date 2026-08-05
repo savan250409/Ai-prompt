@@ -63,6 +63,7 @@ export async function fetchTrendingScrapedData() {
 
     // 3. Find all prompt objects by scanning for `{"id":"cms-`
     const results: any[] = [];
+    const seenIds = new Set<string>();
     let pos = 0;
     let idx = 0;
 
@@ -94,6 +95,10 @@ export async function fetchTrendingScrapedData() {
       try {
         const obj = JSON.parse(objStr);
         if (obj.title && (obj.prompt || obj.imageUrl)) {
+          if (seenIds.has(obj.id)) {
+            continue;
+          }
+          seenIds.add(obj.id);
           let promptText = obj.prompt ?? "";
           if (promptText.startsWith('$')) {
             const refId = promptText.substring(1);
