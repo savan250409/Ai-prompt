@@ -152,7 +152,7 @@ export const catalog = {
         getTrendingListItems().catch(() => []),
         source.featuredImages(),
       ]);
-      return [...trendingItems, ...featured.map(fixListItem)];
+      return [...trendingItems.slice(0, 1), ...featured.map(fixListItem)];
     } catch {
       return source.featuredImages().then((ps) => ps.map(fixListItem));
     }
