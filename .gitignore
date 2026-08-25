@@ -40,3 +40,8 @@ next-env.d.ts
 /src/generated
 # persistent catalog cache (stale-while-revalidate)
 .catalog-cache/
+
+# package files
+package.json
+package-lock.json
+

@@ -36,11 +36,11 @@ export default async function VideoPromptPage({
   const viewer = await getViewer();
   const [cats, sameCat, favorited] = await Promise.all([
     catalog.videoCategories(),
-    catalog.videosByCategory(item.categoryId, { skip: 0, take: 12 }),
+    catalog.videosByCategory(item.categoryId, { skip: 0, take: 30 }),
     viewer.userId ? store.favorites.has(viewer.userId, "video", item.id) : Promise.resolve(false),
   ]);
   const category = cats.find((c) => c.id === item.categoryId);
-  const recommended = sameCat.filter((r) => r.id !== item.id).slice(0, 10);
+  const recommended = sameCat.filter((r) => r.id !== item.id).slice(0, 30);
 
   return (
     <PromptDetailView
