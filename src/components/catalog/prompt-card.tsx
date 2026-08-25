@@ -58,6 +58,10 @@ export function PromptCard({
     ? `${promptHref(item)}?c=${encodeURIComponent(item.categoryId)}`
     : promptHref(item);
 
+  const isScraped = item.id.startsWith("tr-") ||
+    item.categoryId === "trending-prompts" ||
+    item.categoryId === "trending-video-prompts";
+
   return (
     <Link
       href={href}
@@ -120,7 +124,9 @@ export function PromptCard({
       {/* scrim + label */}
       <div className="media-scrim pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3">
-        <span className="line-clamp-1 text-caption font-medium text-white/90">{item.hint}</span>
+        {!isScraped && item.hint && (
+          <span className="line-clamp-1 text-caption font-medium text-white/90">{item.hint}</span>
+        )}
         {item.count > 1 && (
           <span className="shrink-0 rounded-pill bg-black/45 px-2 py-0.5 font-mono text-[11px] text-white/90">
             ×{item.count}

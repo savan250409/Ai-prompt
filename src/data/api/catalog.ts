@@ -40,7 +40,7 @@ import { TOOL_DEFS } from "@/data/tools";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 
-const FRESH_MS = 30 * 60 * 1000; // data is "fresh" for 30 min; stale served + refreshed
+const FRESH_MS = 12 * 60 * 60 * 1000; // data is "fresh" for 12 hours; stale served + refreshed
 const FETCH_TIMEOUT_MS = 45000; // the upstream API can be very slow; allow it to finish
 const FETCH_TRIES = 3; // retry transient fast-failures (the API drops connections)
 const CACHE_FILE = path.join(process.cwd(), ".catalog-cache", "data.json");
@@ -397,6 +397,21 @@ export const apiCatalog = {
       const it = (await fetchVideoItems(categoryId)).find((x) => String(x.id) === id);
       if (it) return videoDetailOf(it, categoryId, unlocked);
     }
+    // Fast path: scan memory cache first before building the full index
+    for (const [key, entry] of mem.entries()) {
+      if (key.startsWith("POST ngd/getAiVideoByCategoryId")) {
+        try {
+          const items = entry.v as ApiVideoItem[];
+          const it = items.find((x) => String(x.id) === id);
+          if (it) {
+            const jsonStr = key.substring(key.indexOf("{"));
+            const body = JSON.parse(jsonStr);
+            const catId = String(body.category_id);
+            return videoDetailOf(it, catId, unlocked);
+          }
+        } catch (e) {}
+      }
+    }
     const e = (await videoIndex()).get(id);
     return e ? videoDetailOf(e.it, e.catId, unlocked) : null;
   },
@@ -409,6 +424,21 @@ export const apiCatalog = {
     if (categoryId) {
       const it = (await fetchImageItems(categoryId)).find((x) => String(x.id) === id);
       if (it) return imageDetailOf(it, categoryId, unlocked);
+    }
+    // Fast path: scan memory cache first before building the full index
+    for (const [key, entry] of mem.entries()) {
+      if (key.startsWith("POST ngd/getAiImageByCategoryId")) {
+        try {
+          const items = entry.v as ApiImageItem[];
+          const it = items.find((x) => String(x.id) === id);
+          if (it) {
+            const jsonStr = key.substring(key.indexOf("{"));
+            const body = JSON.parse(jsonStr);
+            const catId = String(body.category_id);
+            return imageDetailOf(it, catId, unlocked);
+          }
+        } catch (e) {}
+      }
     }
     const e = (await imageIndex()).get(id);
     return e ? imageDetailOf(e.it, e.catId, unlocked) : null;
@@ -424,11 +454,31 @@ export const apiCatalog = {
         const it = (await fetchVideoItems(categoryId)).find((x) => String(x.id) === id);
         if (it) return it.ai_prompt;
       }
+      // Fast path: scan memory cache first
+      for (const [key, entry] of mem.entries()) {
+        if (key.startsWith("POST ngd/getAiVideoByCategoryId")) {
+          try {
+            const items = entry.v as ApiVideoItem[];
+            const it = items.find((x) => String(x.id) === id);
+            if (it) return it.ai_prompt;
+          } catch (e) {}
+        }
+      }
       return (await videoIndex()).get(id)?.it.ai_prompt ?? null;
     }
     if (categoryId) {
       const it = (await fetchImageItems(categoryId)).find((x) => String(x.id) === id);
       if (it) return it.ai_prompt;
+    }
+    // Fast path: scan memory cache first
+    for (const [key, entry] of mem.entries()) {
+      if (key.startsWith("POST ngd/getAiImageByCategoryId")) {
+        try {
+          const items = entry.v as ApiImageItem[];
+          const it = items.find((x) => String(x.id) === id);
+          if (it) return it.ai_prompt;
+        } catch (e) {}
+      }
     }
     return (await imageIndex()).get(id)?.it.ai_prompt ?? null;
   },

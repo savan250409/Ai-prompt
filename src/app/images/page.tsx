@@ -12,6 +12,7 @@ export const metadata = pageMetadata({
 
 export default async function ImagesPage() {
   const categories = await catalog.imageCategories();
+
   return (
     <>
       <PageHero
@@ -20,7 +21,10 @@ export default async function ImagesPage() {
         subtitle="Editorial stills, organized by style. Pick a collection to dive in."
       />
       <Container className="py-10">
-        <CategoryGrid categories={categories} hrefFor={(c) => `/images/${c.id}`} />
+        <CategoryGrid
+          categories={categories}
+          hrefFor={(c) => `/images/${c.id}`}
+        />
       </Container>
     </>
   );

@@ -1,4 +1,4 @@
-import { Clapperboard, Home, ImageIcon, Palette, Wand2, type LucideIcon } from "lucide-react";
+import { Clapperboard, Home, ImageIcon, Palette, Wand2, type LucideIcon, FileText } from "lucide-react";
 
 export interface NavItem {
   href: string;
